@@ -1,0 +1,48 @@
+{
+    "name": "dmitryrogolev/service",
+    "description": "The functionality of the service for working with the model in the Laravel framework.",
+    "version": "0.0.1",
+    "type": "library",
+    "keywords": [
+        "service",
+        "laravel",
+        "laravel-service"
+    ],
+    "homepage": "https://github.com/dmitry-rogolev/Service",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Dmitry Rogolev",
+            "email": "work.drogolev@internet.ru",
+            "homepage": "https://dmitryrogolev.ru",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "laravel/framework": "^10.30"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.15",
+        "laravel/pint": "^1.13"
+    },
+    "autoload": {
+        "psr-4": {
+            "dmitryrogolev\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "dmitryrogolev\\Service\\Tests\\": "tests/",
+            "dmitryrogolev\\Service\\Tests\\Database\\": "tests/database/",
+            "dmitryrogolev\\Service\\Tests\\Database\\Migrations\\": "tests/database/migrations/",
+            "dmitryrogolev\\Service\\Tests\\Database\\Factories\\": "tests/database/factories/", 
+            "dmitryrogolev\\Service\\Tests\\Database\\Seeders\\": "tests/database/seeders/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "scripts": {
+        "test": "vendor/bin/phpunit", 
+        "pint": "vendor/bin/pint"
+    }
+}
