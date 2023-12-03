@@ -10,12 +10,10 @@ class TestCase extends \Orchestra\Testbench\TestCase
 {
     /**
      * Количество выполненных запросов к БД.
-     *
-     * @var integer
      */
     protected int $queryExecutedCount = 0;
 
-    public function setUp(): void 
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -49,20 +47,16 @@ class TestCase extends \Orchestra\Testbench\TestCase
 
     /**
      * Зарегистрировать слушатели событий.
-     *
-     * @return void
      */
-    protected function registerListeners(): void 
+    protected function registerListeners(): void
     {
         DB::listen(fn () => $this->queryExecutedCount++);
     }
 
     /**
      * Сбросить количество выполненных запросов к БД.
-     *
-     * @return void
      */
-    protected function resetQueryExecutedCount(): void 
+    protected function resetQueryExecutedCount(): void
     {
         $this->queryExecutedCount = 0;
     }
@@ -70,7 +64,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
     /**
      * Подтвердить количество выполненных запросов к БД.
      */
-    protected function assertQueryExecutedCount(int $expectedCount, string|null $message = ''): void 
+    protected function assertQueryExecutedCount(int $expectedCount, ?string $message = ''): void
     {
         $this->assertEquals($expectedCount, $this->queryExecutedCount, $message);
     }

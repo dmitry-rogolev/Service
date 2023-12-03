@@ -47,36 +47,41 @@ interface Servicable
 
     /**
      * Возвращает модель(-и) по ее(их) идентификатору(-ам).
-     * 
-     * @param \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int ...$id
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$id Идентификатор или коллекция идентификаторов.
      * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>|\Illuminate\Database\Eloquent\Model|null
      */
     public function find(mixed ...$id): Model|Collection|null;
 
     /**
      * Возвращает множество моделей по их идентификаторам.
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$ids Коллекция идентификаторов.
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function findMany(mixed ...$ids): Collection;
 
     /**
-     * Возвращает модель по ее идентификатору или выбрасывает исключение.
+     * Возвращает модель(-и) по ее(их) идентификатору(-ам) или выбрасывает исключение.
      *
-     * @param  mixed  $id
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  $id Идентификатор или коллекция идентификаторов.
      * @param  bool  $all [true] Выбросить исключение в случае отсутствия хотябы одного из переданных идентификаторов?
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>|\Illuminate\Database\Eloquent\Model
      *
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException<\Illuminate\Database\Eloquent\Model>
      */
-    public function findOrFail($id, bool $all = true): Model|Collection;
+    public function findOrFail(mixed $id, bool $all = true): Model|Collection;
 
     /**
      * Возвращает модели по их идентификаторам или выбрасывает исключение.
      *
-     * @param  mixed  $id
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  $ids Коллекция идентификаторов.
      * @param  bool  $all [true] Выбросить исключение в случае отсутствия хотябы одного из переданных идентификаторов?
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      *
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException<\Illuminate\Database\Eloquent\Model>
      */
-    public function findManyOrFail($ids, bool $all = false): Collection;
+    public function findManyOrFail(mixed $ids, bool $all = true): Collection;
 
     /**
      * Возвращает модель по ее идентификатору или создает новый пустой экземпляр модели.
