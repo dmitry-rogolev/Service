@@ -46,18 +46,17 @@ interface Servicable
     public function random(): ?Model;
 
     /**
-     * Возвращает модель по ее идентификатору.
-     *
-     * @param  mixed  $id
+     * Возвращает модель(-и) по ее(их) идентификатору(-ам).
+     * 
+     * @param \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int ...$id
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>|\Illuminate\Database\Eloquent\Model|null
      */
-    public function find(...$id): Model|Collection|null;
+    public function find(mixed ...$id): Model|Collection|null;
 
     /**
      * Возвращает множество моделей по их идентификаторам.
-     *
-     * @param  \Illuminate\Contracts\Support\Arrayable|array  $ids
      */
-    public function findMany(...$ids): Collection;
+    public function findMany(mixed ...$ids): Collection;
 
     /**
      * Возвращает модель по ее идентификатору или выбрасывает исключение.
@@ -68,6 +67,16 @@ interface Servicable
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException<\Illuminate\Database\Eloquent\Model>
      */
     public function findOrFail($id, bool $all = true): Model|Collection;
+
+    /**
+     * Возвращает модели по их идентификаторам или выбрасывает исключение.
+     *
+     * @param  mixed  $id
+     * @param  bool  $all [true] Выбросить исключение в случае отсутствия хотябы одного из переданных идентификаторов?
+     *
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException<\Illuminate\Database\Eloquent\Model>
+     */
+    public function findManyOrFail($ids, bool $all = false): Collection;
 
     /**
      * Возвращает модель по ее идентификатору или создает новый пустой экземпляр модели.

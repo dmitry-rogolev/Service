@@ -122,33 +122,40 @@ abstract class Service implements Servicable
     }
 
     /**
-     * Возвращает модель по ее идентификатору.
-     *
-     * @param  mixed  $id
+     * Возвращает модель(-и) по ее(их) идентификатору(-ам).
+     * 
+     * @param \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int ...$id
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>|\Illuminate\Database\Eloquent\Model|null
      */
-    public function find(...$id): Model|Collection|null
+    public function find(mixed ...$id): Model|Collection|null
     {
-        $ids = Arr::flatten($id);
+        $ids = $this->toArray($id);
+
+        // Возвращаем коллекцию моделей, если передано множество идентификаторов.
+        if (count($ids) > 1) {
+            return $this->findMany($ids);
+        }
 
         // При передачи модели в метод find класса "Illuminate\Database\Eloquent\Model",
         // она приводится к массиву, т.к. реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
         // Для предотвращения этого мы заменяем модели на их идентификаторы.
-        foreach ($ids as $k => $v) {
-            if ($v instanceof Model) {
-                $ids[$k] = $v->getKey();
-            }
+        [ $id ] = $this->replaceModelsWithTheirIds($ids);
+
+        // Предотвращает выполнение запроса к БД при передачи null в метод find.
+        if (is_null($id)) {
+            return null;
         }
 
-        // Если передать массив с одним идентификатором, то вернется коллекция с одной моделью.
-        return $this->model::find(count($ids) === 1 ? $ids[0] : $ids);
+        return $this->model::find($id);
     }
 
     /**
      * Возвращает множество моделей по их идентификаторам.
-     *
-     * @param  \Illuminate\Contracts\Support\Arrayable|array  $ids
+     * 
+     * @param \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int ...$ids
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
-    public function findMany(...$ids): Collection
+    public function findMany(mixed ...$ids): Collection
     {
         $ids = Arr::flatten($ids);
 
@@ -176,6 +183,34 @@ abstract class Service implements Servicable
     {
         $ids = Arr::flatten(Arr::wrap($id));
 
+        if (count($ids) > 1) {
+            return $this->findManyOrFail($ids, $all);
+        }
+
+        $id = $ids[0];
+
+        // При передачи модели в метод find класса "Illuminate\Database\Eloquent\Model",
+        // она приводится к массиву, т.к. реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
+        // Для предотвращения этого мы заменяем модели на их идентификаторы.
+        if ($id instanceof Model) {
+            $id = $id->getKey();
+        }
+
+        return $this->model::findOrFail($ids);
+    }
+
+    /**
+     * Возвращает модели по их идентификаторам или выбрасывает исключение.
+     *
+     * @param  mixed  $id
+     * @param  bool  $all [true] Выбросить исключение в случае отсутствия хотябы одного из переданных идентификаторов?
+     *
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException<\Illuminate\Database\Eloquent\Model>
+     */
+    public function findManyOrFail($ids, bool $all = true): Collection
+    {
+        $ids = Arr::flatten(Arr::wrap($ids));
+
         // При передачи модели в метод find класса "Illuminate\Database\Eloquent\Model",
         // она приводится к массиву, т.к. реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
         // Для предотвращения этого мы заменяем модели на их идентификаторы.
@@ -185,16 +220,15 @@ abstract class Service implements Servicable
             }
         }
 
-        // Если передать массив с одним идентификатором, то вернется коллекция с одной моделью.
-        $ids = count($ids) === 1 ? $ids[0] : $ids;
-
         // Метод findOrFail выбрасывает исключение,
         // если хотя бы один идентификатор из переданных отсутствует в таблице.
+        // Поэтому если необходимо выбросить исключение только тогда, 
+        // когда не найдено не одной записи, мы выбрасываем исключение сами.
         if (is_array($ids) && ! $all) {
             $result = $this->find($ids);
 
             if (is_null($result) || $result->isEmpty()) {
-                throw (new ModelNotFoundException)->setModel($this->model, $id);
+                throw (new ModelNotFoundException)->setModel($this->model, $ids);
             }
 
             return $result;
@@ -740,5 +774,31 @@ abstract class Service implements Servicable
     public function seed(): void
     {
         app($this->seeder)->run();
+    }
+
+    /**
+     * Приводит переданной значение к массиву.
+     *
+     * @return array<int, mixed>
+     */
+    protected function toArray(mixed $value): array 
+    {
+        return Arr::flatten(Arr::wrap($value));
+    }
+
+    /**
+     * Заменяет модели на их идентификаторы.
+     *
+     * @return array<int, mixed>
+     */
+    protected function replaceModelsWithTheirIds(array $models): array 
+    {
+        foreach ($models as $k => $v) {
+            if ($v instanceof Model) {
+                $models[$k] = $v->getKey();
+            }
+        }
+
+        return $models;
     }
 }
