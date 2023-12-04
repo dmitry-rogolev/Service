@@ -93,11 +93,10 @@ interface Servicable
     /**
      * Возвращает модель по ее идентификатору или возвращает результат выполнения переданной функции.
      *
-     * @param  mixed  $id
-     * @param  bool  $all [false] Выполнить ли для каждой отсутствующей модели переданную функцию?
-     * @return \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection|mixed
+     * @param  \Illuminate\Database\Eloquent\Model|string|int  $id Идентификатор.
+     * @return \Illuminate\Database\Eloquent\Model|mixed
      */
-    public function findOr($id, Closure $callback, bool $all = false): mixed;
+    public function findOr(mixed $id, Closure $callback): mixed;
 
     /**
      * Возвращает первую совпадающую по аттрибутам запись или создает новый экземпляр модели с такими аттрибутами, но не сохраняет ее в таблице.
@@ -106,7 +105,7 @@ interface Servicable
      * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $values Аттрибуты, которые необходимо добавить к аттрибутам,
      * по которым ведется поиск, при создании нового экземпляра модели.
      */
-    public function firstOrNew(Arrayable|Model|array $attributes = [], Arrayable|Model|array $values = []): Model;
+    public function firstOrNew(mixed $attributes = [], mixed $values = []): Model;
 
     /**
      * Возвращает первую запись, совпадающую по аттрибутам, или создает новую с такими аттрибутами.

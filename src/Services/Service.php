@@ -129,7 +129,7 @@ abstract class Service implements Servicable
      */
     public function find(mixed ...$id): Model|Collection|null
     {
-        $ids = $this->toArray($id);
+        $ids = $this->toFlattenArray($id);
 
         // Возвращаем коллекцию моделей, если передано множество идентификаторов.
         if (count($ids) > 1) {
@@ -157,7 +157,7 @@ abstract class Service implements Servicable
      */
     public function findMany(mixed ...$ids): Collection
     {
-        $ids = $this->toArray($ids);
+        $ids = $this->toFlattenArray($ids);
 
         // При передачи модели в метод findMany класса "Illuminate\Database\Eloquent\Model",
         // она приводится к массиву, т.к. реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
@@ -178,7 +178,7 @@ abstract class Service implements Servicable
      */
     public function findOrFail(mixed $id, bool $all = true): Model|Collection
     {
-        $ids = $this->toArray($id);
+        $ids = $this->toFlattenArray($id);
 
         // Возвращаем коллекцию моделей, если передано множество идентификаторов.
         if (count($ids) > 1) {
@@ -209,7 +209,7 @@ abstract class Service implements Servicable
      */
     public function findManyOrFail(mixed $ids, bool $all = true): Collection
     {
-        $ids = $this->toArray($ids);
+        $ids = $this->toFlattenArray($ids);
 
         // При передачи модели в метод findOrFail класса "Illuminate\Database\Eloquent\Model",
         // она приводится к массиву, т.к. реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
@@ -240,7 +240,7 @@ abstract class Service implements Servicable
      */
     public function findOrNew(mixed $id): Model
     {
-        $ids = $this->toArray($id);
+        $ids = $this->toFlattenArray($id);
 
         // При передачи модели в метод findOrNew класса "Illuminate\Database\Eloquent\Model",
         // она приводится к массиву, т.к. реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
@@ -258,37 +258,24 @@ abstract class Service implements Servicable
     /**
      * Возвращает модель по ее идентификатору или возвращает результат выполнения переданной функции.
      *
-     * @param  mixed  $id
-     * @param  bool  $all [false] Выполнить ли для каждой отсутствующей модели переданную функцию?
-     * @return \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection|mixed
+     * @param  \Illuminate\Database\Eloquent\Model|string|int  $id Идентификатор.
+     * @return \Illuminate\Database\Eloquent\Model|mixed
      */
-    public function findOr($id, Closure $callback, bool $all = false): mixed
+    public function findOr(mixed $id, Closure $callback): mixed
     {
-        $ids = Arr::flatten(Arr::wrap($id));
+        $ids = $this->toFlattenArray($id);
 
-        // При передачи модели в метод find класса "Illuminate\Database\Eloquent\Model",
+        // При передачи модели в метод findOr класса "Illuminate\Database\Eloquent\Model",
         // она приводится к массиву, т.к. реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
         // Для предотвращения этого мы заменяем модели на их идентификаторы.
-        foreach ($ids as $k => $v) {
-            if ($v instanceof Model) {
-                $ids[$k] = $v->getKey();
-            }
+        [$id] = $this->replaceModelsWithTheirIds($ids);
+
+        // Предотвращает выполнение запроса к БД при передачи null в метод findOr.
+        if (is_null($id)) {
+            return $callback();
         }
 
-        // Если передать массив с одним идентификатором, то вернется коллекция с одной моделью.
-        $ids = count($ids) === 1 ? $ids[0] : $ids;
-
-        if (is_array($ids) && $all) {
-            $result = array_map(fn ($id) => $this->model::findOr($id, $callback), $ids);
-
-            return new Collection($result);
-        }
-
-        $result = $this->model::findOr($ids, $callback);
-
-        // Если передать массив отсутствующих в таблице идентификаторов в метод findOr,
-        // то переданная функция выполнена не будет, а будет возвращена пустая коллекция.
-        return $result instanceof Collection && $result->isEmpty() ? $callback() : $result;
+        return $this->model::findOr($id, $callback);
     }
 
     /**
@@ -298,23 +285,9 @@ abstract class Service implements Servicable
      * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $values Аттрибуты, которые необходимо добавить к аттрибутам,
      * по которым ведется поиск, при создании нового экземпляра модели.
      */
-    public function firstOrNew(Arrayable|Model|array $attributes = [], Arrayable|Model|array $values = []): Model
+    public function firstOrNew(mixed $attributes = [], mixed $values = []): Model
     {
-        if ($attributes instanceof Model) {
-            $attributes = $attributes->getAttributes();
-        }
-
-        if ($values instanceof Model) {
-            $values = $values->getAttributes();
-        }
-
-        if ($attributes instanceof Arrayable) {
-            $attributes = $attributes->toArray();
-        }
-
-        if ($values instanceof Arrayable) {
-            $values = $values->toArray();
-        }
+        [$attributes, $values] = $this->paramsToArray(compact('attributes', 'values'));
 
         return $this->model::firstOrNew($attributes, $values);
     }
@@ -764,13 +737,59 @@ abstract class Service implements Servicable
     }
 
     /**
-     * Приводит переданной значение к массиву.
+     * Приводит переданной значение к выровненному массиву.
      *
      * @return array<int, mixed>
      */
-    protected function toArray(mixed $value): array
+    protected function toFlattenArray(mixed $value): array
     {
         return Arr::flatten([$value]);
+    }
+
+    /**
+     * Приводит переданную модель к массиву.
+     *
+     * @return array<string, mixed>
+     */
+    protected function modelToArray(Model $model): array
+    {
+        return $model->getAttributes();
+    }
+
+    /**
+     * Приводит класс, реализующий интерфейс "Illuminate\Contracts\Support\Arrayable" к массиву.
+     *
+     * @return array<mixed, mixed>
+     */
+    protected function arrayableToArray(Arrayable $arrayable): array
+    {
+        return $arrayable->toArray();
+    }
+
+    /**
+     * Приводит переданные параметры функции к массиву.
+     *
+     * @return array<int, array>
+     */
+    protected function paramsToArray(array $params): array
+    {
+        $result = [];
+
+        foreach ($params as $v) {
+            $value = [];
+
+            if ($v instanceof Model) {
+                $value = $this->modelToArray($v);
+            } elseif ($v instanceof Arrayable) {
+                $value = $this->arrayableToArray($v);
+            } elseif (is_array($v)) {
+                $value = $v;
+            }
+
+            $result[] = $value;
+        }
+
+        return $result;
     }
 
     /**
