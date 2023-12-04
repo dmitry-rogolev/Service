@@ -59,16 +59,28 @@ class ServiceTest extends TestCase
     {
         $count = random_int(1, 10);
         $this->generate(User::class, $count);
-        $this->resetQueryExecutedCount();
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Подтверждаем возврат методом коллекции.                    ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $all = Service::all();
+        $this->assertInstanceOf(Collection::class, $all);
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                         Получаем все записи из таблицы.                        ||
         // ! ||--------------------------------------------------------------------------------||
 
         $all = Service::all();
-        $this->assertQueryExecutedCount(1);
-        $this->assertInstanceOf(Collection::class, $all);
         $this->assertCount($count, $all);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||               Подтверждаем количество выполненных запросов к БД.               ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $this->resetQueryExecutedCount();
+        Service::all();
+        $this->assertQueryExecutedCount(1);
     }
 
     /**
@@ -77,14 +89,19 @@ class ServiceTest extends TestCase
     public function test_random(): void
     {
         $this->generate(User::class, 10);
-        $this->resetQueryExecutedCount();
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Подтверждаем возврат методом модели.                      ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $model = Service::random();
+        $this->assertInstanceOf(User::class, $model);
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                      Получаем случайную запись из таблицы.                     ||
         // ! ||--------------------------------------------------------------------------------||
 
         $model = Service::random();
-        $this->assertQueryExecutedCount(1);
         $this->assertModelExists($model);
         $this->assertInstanceOf(User::class, $model);
 
@@ -94,6 +111,14 @@ class ServiceTest extends TestCase
 
         $model->delete();
         $this->assertFalse($model->is(Service::random()));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||               Подтверждаем количество выполненных запросов к БД.               ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $this->resetQueryExecutedCount();
+        Service::random();
+        $this->assertQueryExecutedCount(1);
     }
 
     /**
@@ -102,6 +127,13 @@ class ServiceTest extends TestCase
     public function test_find_return_model(): void
     {
         $user = $this->generate(User::class);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Подтверждаем возврат методом модели.                      ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $model = Service::find($user->getKey());
+        $this->assertInstanceOf(User::class, $model);
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                             Передаем идентификатор.                            ||
@@ -136,18 +168,16 @@ class ServiceTest extends TestCase
         // ! ||--------------------------------------------------------------------------------||
 
         $this->resetQueryExecutedCount();
-        $model = Service::find($user->getKey());
+        Service::find($user->getKey());
         $this->assertQueryExecutedCount(1);
-        $this->assertTrue($user->is($model));
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||           Передаем null и подтверждаем, что запрос к БД не выполнен.           ||
         // ! ||--------------------------------------------------------------------------------||
 
         $this->resetQueryExecutedCount();
-        $model = Service::find(null);
+        Service::find(null);
         $this->assertQueryExecutedCount(0);
-        $this->assertNull($model);
     }
 
     /**
@@ -157,6 +187,14 @@ class ServiceTest extends TestCase
     {
         $users = $this->generate(User::class, 3);
         $expected = $users->pluck('id')->all();
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Подтверждаем возврат методом коллекции.                    ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $ids = $users->pluck('id')->all();
+        $models = Service::find($ids);
+        $this->assertInstanceOf(Collection::class, $models);
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                        Передаем массив идентификаторов.                        ||
@@ -211,11 +249,10 @@ class ServiceTest extends TestCase
         // ! ||                 и подтверждаем количество выполненных запросов.                ||
         // ! ||--------------------------------------------------------------------------------||
 
-        $this->resetQueryExecutedCount();
         $ids = $users->pluck('id')->all();
-        $actual = Service::find($ids)->pluck('id')->all();
+        $this->resetQueryExecutedCount();
+        Service::find($ids);
         $this->assertQueryExecutedCount(1);
-        $this->assertEquals($expected, $actual);
     }
 
     /**
@@ -225,6 +262,14 @@ class ServiceTest extends TestCase
     {
         $users = $this->generate(User::class, 3);
         $expected = $users->pluck('id')->all();
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Подтверждаем возврат методом коллекции.                    ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $ids = $users->pluck('id')->all();
+        $models = Service::findMany($ids);
+        $this->assertInstanceOf(Collection::class, $models);
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                        Передаем массив идентификаторов.                        ||
@@ -279,11 +324,10 @@ class ServiceTest extends TestCase
         // ! ||                 и подтверждаем количество выполненных запросов.                ||
         // ! ||--------------------------------------------------------------------------------||
 
-        $this->resetQueryExecutedCount();
         $ids = $users->pluck('id')->all();
-        $actual = Service::findMany($ids)->pluck('id')->all();
+        $this->resetQueryExecutedCount();
+        Service::findMany($ids);
         $this->assertQueryExecutedCount(1);
-        $this->assertEquals($expected, $actual);
     }
 
     /**
@@ -292,6 +336,13 @@ class ServiceTest extends TestCase
     public function test_find_return_model_or_fail(): void
     {
         $user = $this->generate(User::class);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Подтверждаем возврат методом модели.                      ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $model = Service::findOrFail($user->getKey());
+        $this->assertInstanceOf(User::class, $model);
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                             Передаем идентификатор.                            ||
@@ -313,9 +364,8 @@ class ServiceTest extends TestCase
         // ! ||--------------------------------------------------------------------------------||
 
         $this->resetQueryExecutedCount();
-        $model = Service::findOrFail($user->getKey());
+        Service::findOrFail($user->getKey());
         $this->assertQueryExecutedCount(1);
-        $this->assertTrue($user->is($model));
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||           Передаем null и подтверждаем, что запрос к БД не выполнен.           ||
@@ -347,6 +397,14 @@ class ServiceTest extends TestCase
         $all = true;
 
         // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Подтверждаем возврат методом коллекции.                    ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $ids = $users->pluck('id')->all();
+        $models = Service::findOrFail($ids, $all);
+        $this->assertInstanceOf(Collection::class, $models);
+
+        // ! ||--------------------------------------------------------------------------------||
         // ! ||                        Передаем массив идентификаторов.                        ||
         // ! ||--------------------------------------------------------------------------------||
 
@@ -383,11 +441,10 @@ class ServiceTest extends TestCase
         // ! ||                 и подтверждаем количество выполненных запросов.                ||
         // ! ||--------------------------------------------------------------------------------||
 
-        $this->resetQueryExecutedCount();
         $ids = $users->pluck('id')->all();
-        $actual = Service::findOrFail($ids, $all)->pluck('id')->all();
+        $this->resetQueryExecutedCount();
+        Service::findOrFail($ids, $all);
         $this->assertQueryExecutedCount(1);
-        $this->assertEquals($expected, $actual);
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                           Передаем коллекцию моделей                           ||
@@ -410,6 +467,14 @@ class ServiceTest extends TestCase
         $all = false;
 
         // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Подтверждаем возврат методом коллекции.                    ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $ids = $users->pluck('id')->all();
+        $models = Service::findOrFail($ids, $all);
+        $this->assertInstanceOf(Collection::class, $models);
+
+        // ! ||--------------------------------------------------------------------------------||
         // ! ||                        Передаем массив идентификаторов.                        ||
         // ! ||--------------------------------------------------------------------------------||
 
@@ -446,11 +511,10 @@ class ServiceTest extends TestCase
         // ! ||                 и подтверждаем количество выполненных запросов.                ||
         // ! ||--------------------------------------------------------------------------------||
 
-        $this->resetQueryExecutedCount();
         $ids = $users->pluck('id')->all();
-        $actual = Service::findOrFail($ids, $all)->pluck('id')->all();
+        $this->resetQueryExecutedCount();
+        Service::findOrFail($ids, $all);
         $this->assertQueryExecutedCount(1);
-        $this->assertEquals($expected, $actual);
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                           Передаем коллекцию моделей                           ||
@@ -481,6 +545,14 @@ class ServiceTest extends TestCase
         $all = true;
 
         // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Подтверждаем возврат методом коллекции.                    ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $ids = $users->pluck('id')->all();
+        $models = Service::findManyOrFail($ids, $all);
+        $this->assertInstanceOf(Collection::class, $models);
+
+        // ! ||--------------------------------------------------------------------------------||
         // ! ||                        Передаем массив идентификаторов.                        ||
         // ! ||--------------------------------------------------------------------------------||
 
@@ -517,11 +589,10 @@ class ServiceTest extends TestCase
         // ! ||                 и подтверждаем количество выполненных запросов.                ||
         // ! ||--------------------------------------------------------------------------------||
 
-        $this->resetQueryExecutedCount();
         $ids = $users->pluck('id')->all();
-        $actual = Service::findManyOrFail($ids, $all)->pluck('id')->all();
+        $this->resetQueryExecutedCount();
+        Service::findManyOrFail($ids, $all);
         $this->assertQueryExecutedCount(1);
-        $this->assertEquals($expected, $actual);
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                           Передаем коллекцию моделей                           ||
@@ -544,6 +615,14 @@ class ServiceTest extends TestCase
         $all = false;
 
         // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Подтверждаем возврат методом коллекции.                    ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $ids = $users->pluck('id')->all();
+        $models = Service::findManyOrFail($ids, $all);
+        $this->assertInstanceOf(Collection::class, $models);
+
+        // ! ||--------------------------------------------------------------------------------||
         // ! ||                        Передаем массив идентификаторов.                        ||
         // ! ||--------------------------------------------------------------------------------||
 
@@ -580,11 +659,10 @@ class ServiceTest extends TestCase
         // ! ||                 и подтверждаем количество выполненных запросов.                ||
         // ! ||--------------------------------------------------------------------------------||
 
-        $this->resetQueryExecutedCount();
         $ids = $users->pluck('id')->all();
-        $actual = Service::findManyOrFail($ids, $all)->pluck('id')->all();
+        $this->resetQueryExecutedCount();
+        Service::findManyOrFail($ids, $all);
         $this->assertQueryExecutedCount(1);
-        $this->assertEquals($expected, $actual);
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                           Передаем коллекцию моделей                           ||
@@ -610,6 +688,13 @@ class ServiceTest extends TestCase
     public function test_find_return_model_or_new(): void
     {
         $user = $this->generate(User::class);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Подтверждаем возврат методом модели.                      ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $model = Service::findOrNew($user->getKey());
+        $this->assertInstanceOf(User::class, $model);
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                             Передаем идентификатор.                            ||
@@ -647,19 +732,16 @@ class ServiceTest extends TestCase
         // ! ||--------------------------------------------------------------------------------||
 
         $this->resetQueryExecutedCount();
-        $model = Service::findOrNew($user->getKey());
+        Service::findOrNew($user->getKey());
         $this->assertQueryExecutedCount(1);
-        $this->assertTrue($user->is($model));
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||           Передаем null и подтверждаем, что запрос к БД не выполнен.           ||
         // ! ||--------------------------------------------------------------------------------||
 
         $this->resetQueryExecutedCount();
-        $model = Service::findOrNew(null);
+        Service::findOrNew(null);
         $this->assertQueryExecutedCount(0);
-        $this->assertFalse($user->is($model));
-        $this->assertModelMissing($model);
     }
 
     /**
@@ -669,6 +751,13 @@ class ServiceTest extends TestCase
     {
         $user = $this->generate(User::class);
         $callback = fn () => false;
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Подтверждаем возврат методом модели.                      ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $model = Service::findOr($user->getKey(), $callback);
+        $this->assertInstanceOf(User::class, $model);
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                             Передаем идентификатор.                            ||
@@ -704,18 +793,16 @@ class ServiceTest extends TestCase
         // ! ||--------------------------------------------------------------------------------||
 
         $this->resetQueryExecutedCount();
-        $model = Service::findOr($user->getKey(), $callback);
+        Service::findOr($user->getKey(), $callback);
         $this->assertQueryExecutedCount(1);
-        $this->assertTrue($user->is($model));
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||           Передаем null и подтверждаем, что запрос к БД не выполнен.           ||
         // ! ||--------------------------------------------------------------------------------||
 
         $this->resetQueryExecutedCount();
-        $model = Service::findOr(null, $callback);
+        Service::findOr(null, $callback);
         $this->assertQueryExecutedCount(0);
-        $this->assertFalse($model);
     }
 
     /**
@@ -726,6 +813,16 @@ class ServiceTest extends TestCase
     {
         $firstModelInTable = $this->generate(User::class);
         $user = $this->generate(User::class);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Подтверждаем возврат методом модели.                      ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'email' => $user->email,
+        ];
+        $model = Service::firstOrNew($attributes);
+        $this->assertInstanceOf(User::class, $model);
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||         Передаем массив аттрибутов, по которым необходимо вести поиск.         ||
@@ -805,9 +902,8 @@ class ServiceTest extends TestCase
             'email' => $user->email,
         ];
         $this->resetQueryExecutedCount();
-        $model = Service::firstOrNew($attributes);
+        Service::firstOrNew($attributes);
         $this->assertQueryExecutedCount(1);
-        $this->assertTrue($user->is($model));
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                Подтверждаем количество выполненных запросов к БД               ||
@@ -816,13 +912,8 @@ class ServiceTest extends TestCase
 
         $attributes = $this->generate(User::class, false);
         $this->resetQueryExecutedCount();
-        $model = Service::firstOrNew($attributes);
+        Service::firstOrNew($attributes);
         $this->assertQueryExecutedCount(1);
-        $this->assertModelMissing($model);
-        $this->assertEquals(
-            $attributes->only(['email', 'name', 'password']),
-            $model->only(['email', 'name', 'password'])
-        );
     }
 
     /**
@@ -833,6 +924,16 @@ class ServiceTest extends TestCase
     {
         $firstModelInTable = $this->generate(User::class);
         $user = $this->generate(User::class);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Подтверждаем возврат методом модели.                      ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'email' => $user->email,
+        ];
+        $model = Service::firstOrCreate($attributes);
+        $this->assertInstanceOf(User::class, $model);
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||         Передаем массив аттрибутов, по которым необходимо вести поиск.         ||
@@ -912,9 +1013,8 @@ class ServiceTest extends TestCase
             'email' => $user->email,
         ];
         $this->resetQueryExecutedCount();
-        $model = Service::firstOrCreate($attributes);
+        Service::firstOrCreate($attributes);
         $this->assertQueryExecutedCount(1);
-        $this->assertTrue($user->is($model));
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                Подтверждаем количество выполненных запросов к БД               ||
@@ -923,13 +1023,8 @@ class ServiceTest extends TestCase
 
         $attributes = $this->generate(User::class, false);
         $this->resetQueryExecutedCount();
-        $model = Service::firstOrCreate($attributes);
+        Service::firstOrCreate($attributes);
         $this->assertQueryExecutedCount(2);
-        $this->assertModelExists($model);
-        $this->assertEquals(
-            $attributes->only(['email', 'name', 'password']),
-            $model->only(['email', 'name', 'password'])
-        );
     }
 
     /**
@@ -939,6 +1034,20 @@ class ServiceTest extends TestCase
     public function test_create_or_first(): void
     {
         // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Подтверждаем возврат методом модели.                      ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'email' => fake()->unique()->email(),
+        ];
+        $values = [
+            'name' => 'Admin',
+            'password' => 'password',
+        ];
+        $model = Service::createOrFirst($attributes, $values);
+        $this->assertInstanceOf(User::class, $model);
+
+        // ! ||--------------------------------------------------------------------------------||
         // ! ||                       Передаем аттрибуты в виде массивов.                      ||
         // ! ||--------------------------------------------------------------------------------||
 
@@ -1006,13 +1115,8 @@ class ServiceTest extends TestCase
 
         $attributes = $this->generate(User::class, false);
         $this->resetQueryExecutedCount();
-        $model = Service::createOrFirst($attributes);
+        Service::createOrFirst($attributes);
         $this->assertQueryExecutedCount(1);
-        $this->assertModelExists($model);
-        $this->assertEquals(
-            $attributes->only(['email', 'name', 'password']),
-            $model->only(['email', 'name', 'password'])
-        );
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                Подтверждаем количество выполненных запросов к БД               ||
@@ -1020,14 +1124,8 @@ class ServiceTest extends TestCase
         // ! ||--------------------------------------------------------------------------------||
 
         $this->resetQueryExecutedCount();
-        $model = Service::createOrFirst($attributes);
+        Service::createOrFirst($attributes);
         $this->assertQueryExecutedCount(1);
-        $this->assertModelExists($model);
-        $this->assertCount(1, Service::getModel()::where('email', $attributes->email)->get());
-        $this->assertEquals(
-            $attributes->only(['email', 'name', 'password']),
-            $model->only(['email', 'name', 'password'])
-        );
     }
 
     /**
@@ -1036,6 +1134,20 @@ class ServiceTest extends TestCase
     public function test_update_or_create(): void
     {
         // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Подтверждаем возврат методом модели.                      ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'email' => fake()->unique()->email(),
+        ];
+        $values = [
+            'name' => 'Admin',
+            'password' => 'password',
+        ];
+        $model = Service::updateOrCreate($attributes, $values);
+        $this->assertInstanceOf(User::class, $model);
+
+        // ! ||--------------------------------------------------------------------------------||
         // ! ||                       Передаем аттрибуты в виде массивов.                      ||
         // ! ||--------------------------------------------------------------------------------||
 
@@ -1103,13 +1215,8 @@ class ServiceTest extends TestCase
 
         $attributes = $this->generate(User::class, false);
         $this->resetQueryExecutedCount();
-        $model = Service::updateOrCreate($attributes);
+        Service::updateOrCreate($attributes);
         $this->assertQueryExecutedCount(2);
-        $this->assertModelExists($model);
-        $this->assertEquals(
-            $attributes->only(['email', 'name', 'password']),
-            $model->only(['email', 'name', 'password'])
-        );
 
         // ! ||--------------------------------------------------------------------------------||
         // ! ||                Подтверждаем количество выполненных запросов к БД               ||
@@ -1118,13 +1225,8 @@ class ServiceTest extends TestCase
 
         $values = $this->generate(User::class, false);
         $this->resetQueryExecutedCount();
-        $model = Service::updateOrCreate($attributes, $values);
+        Service::updateOrCreate($attributes, $values);
         $this->assertQueryExecutedCount(2);
-        $this->assertModelExists($model);
-        $this->assertEquals(
-            $values->only(['email', 'name', 'password']),
-            $model->only(['email', 'name', 'password'])
-        );
     }
 
     /**
@@ -1209,9 +1311,8 @@ class ServiceTest extends TestCase
         $column = 'email';
         $value = $user->email;
         $this->resetQueryExecutedCount();
-        $model = Service::where($column, $value)->first();
+        Service::where($column, $value);
         $this->assertQueryExecutedCount(1);
-        $this->assertTrue($user->is($model));
     }
 
     /**
@@ -1297,9 +1398,8 @@ class ServiceTest extends TestCase
         $column = 'email';
         $value = $user->email;
         $this->resetQueryExecutedCount();
-        $model = Service::firstWhere($column, $value);
+        Service::firstWhere($column, $value);
         $this->assertQueryExecutedCount(1);
-        $this->assertTrue($user->is($model));
     }
 
     /**
@@ -1386,36 +1486,92 @@ class ServiceTest extends TestCase
 
         $column = 'email';
         $value = $user->email;
-        $expected = $users->pluck('email')->all();
         $this->resetQueryExecutedCount();
-        $actual = Service::whereNot($column, $value)->pluck('email')->all();
+        Service::whereNot($column, $value);
         $this->assertQueryExecutedCount(1);
-        $this->assertEquals($expected, $actual);
     }
 
-    // /**
-    //  * Есть ли метод, возвращающий самую позднюю по времени создания модель?
-    //  */
-    // public function test_latest(): void
-    // {
-    //     $this->generateUser(2);
-    //     $this->travel(5)->minutes();
-    //     $user = $this->generateUser();
+    /**
+     * Есть ли метод, возвращающий самую позднюю по времени создания модель?
+     */
+    public function test_latest(): void
+    {
+        $this->generate(User::class, 2);
+        $this->travel(5)->minutes();
+        $latest = $this->generate(User::class);
 
-    //     $this->assertTrue($user->is(Service::latest()));
-    // }
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                         Подтверждаем получение модели.                         ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    // /**
-    //  * Есть ли метод, возвращающий самую раннюю по времени создания модель?
-    //  */
-    // public function test_oldest(): void
-    // {
-    //     $user = $this->generateUser();
-    //     $this->travel(5)->minutes();
-    //     $this->generateUser(2);
+        $model = Service::latest();
+        $this->assertInstanceOf(Model::class, $model);
 
-    //     $this->assertTrue($user->is(Service::oldest()));
-    // }
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||          Подтверждаем получение последней по времени создания записи.          ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $model = Service::latest();
+        $this->assertModelExists($model);
+        $this->assertTrue($latest->is($model));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||               Подтверждаем количество выполненных запросов к БД.               ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $this->resetQueryExecutedCount();
+        $model = Service::latest();
+        $this->assertQueryExecutedCount(1);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||          Подтверждаем получение null при отсутствии записей в таблице.         ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        Service::getModel()::truncate();
+        $model = Service::latest();
+        $this->assertNull($model);
+    }
+
+    /**
+     * Есть ли метод, возвращающий самую раннюю по времени создания модель?
+     */
+    public function test_oldest(): void
+    {
+        $oldest = $this->generate(User::class);
+        $this->travel(5)->minutes();
+        $this->generate(User::class, 2);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                         Подтверждаем получение модели.                         ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $model = Service::oldest();
+        $this->assertInstanceOf(Model::class, $model);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||          Подтверждаем получение последней по времени создания записи.          ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $model = Service::oldest();
+        $this->assertModelExists($model);
+        $this->assertTrue($oldest->is($model));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||               Подтверждаем количество выполненных запросов к БД.               ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $this->resetQueryExecutedCount();
+        $model = Service::oldest();
+        $this->assertQueryExecutedCount(1);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||          Подтверждаем получение null при отсутствии записей в таблице.         ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        Service::getModel()::truncate();
+        $model = Service::oldest();
+        $this->assertNull($model);
+    }
 
     // /**
     //  * Есть ли метод, проверяющий наличие модели в таблице по ее идентификатору?
