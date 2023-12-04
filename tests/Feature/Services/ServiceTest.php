@@ -215,7 +215,7 @@ class ServiceTest extends TestCase
     /**
      * Есть ли метод, возвращающий модель по ее идентификатору или выбрасывающий исключение?
      */
-    public function test_find_or_fail_model(): void
+    public function test_find_return_model_or_fail(): void
     {
         $user = $this->generate(User::class);
 
@@ -250,7 +250,7 @@ class ServiceTest extends TestCase
      * Есть ли метод, возвращающий коллекцию моделей по коллекции идентификаторов
      * или выбрасывающий исключение при отсутствии хотябы одной модели из переданных идентификаторов?
      */
-    public function test_find_or_fail_collection_all(): void
+    public function test_find_return_collection_or_fail_all(): void
     {
         $users = $this->generate(User::class, 3);
         $expected = $users->pluck('id')->all();
@@ -293,7 +293,7 @@ class ServiceTest extends TestCase
      * Есть ли метод, возвращающий коллекцию моделей по коллекции идентификаторов
      * или выбрасывающий исключение при отсутствии не одной записи?
      */
-    public function test_find_or_fail_collection(): void
+    public function test_find_return_collection_or_fail(): void
     {
         $users = $this->generate(User::class, 3);
         $expected = $users->pluck('id')->all();
@@ -428,119 +428,44 @@ class ServiceTest extends TestCase
         Service::findManyOrFail(['key', 4564646, null], $all);
     }
 
-    // /**
-    //  * Есть ли метод, возвращающий модель по ее идентификатору или возвращающий пустую модель?
-    //  */
-    // public function test_find_or_new_model(): void
-    // {
-    //     $user = $this->generateUser();
+    /**
+     * Есть ли метод, возвращающий модель по ее идентификатору или возвращающий новый экземпляр пустой модели?
+     */
+    public function test_find_return_model_or_new(): void
+    {
+        $user = $this->generate(User::class);
 
-    //     // Передаем идентификатор.
-    //     $this->assertTrue($user->is(Service::findOrNew($user->getKey(), false)));
+        // Передаем идентификатор.
+        $model = Service::findOrNew($user->getKey());
+        $this->assertTrue($user->is($model));
 
-    //     // Передаем модель.
-    //     $this->assertTrue($user->is(Service::findOrNew($user, false)));
+        // Передаем модель.
+        $model = Service::findOrNew($user);
+        $this->assertTrue($user->is($model));
 
-    //     // Передаем отсутствующий в таблице идентификатор.
-    //     $this->assertFalse(Service::findOrNew(364939, false)->exists);
-    // }
+        // Передаем отсутствующий в таблице идентификатор.
+        $model = Service::findOrNew(364939);
+        $this->assertFalse($user->is($model));
+        $this->assertModelMissing($model);
 
-    // /**
-    //  * Есть ли метод, возвращающий модель по ее идентификатору или возвращающий пустую модель?
-    //  */
-    // public function test_find_or_new_model_all(): void
-    // {
-    //     $user = $this->generateUser();
+        // Передаем отсутствующую в таблице модель.
+        $model = Service::findOrNew($this->generate(User::class, false));
+        $this->assertFalse($user->is($model));
+        $this->assertModelMissing($model);
 
-    //     // Передаем идентификатор.
-    //     $this->assertTrue($user->is(Service::findOrNew($user->getKey(), true)));
+        // Передаем идентификатор и подтверждаем количество выполненных запросов.
+        $this->resetQueryExecutedCount();
+        $model = Service::findOrNew($user->getKey());
+        $this->assertQueryExecutedCount(1);
+        $this->assertTrue($user->is($model));
 
-    //     // Передаем модель.
-    //     $this->assertTrue($user->is(Service::findOrNew($user, true)));
-
-    //     // Передаем отсутствующий в таблице идентификатор.
-    //     $this->assertFalse(Service::findOrNew(364939, true)->exists);
-    // }
-
-    // /**
-    //  * Есть ли метод, возвращающий коллекцию моделей по коллекции идентификаторов или возвращающий пустую коллекцию?
-    //  */
-    // public function test_find_or_new_collection(): void
-    // {
-    //     $users = $this->generateUser(3);
-
-    //     $expected = $users->pluck('id')->all();
-
-    //     // Передаем массив идентификаторов.
-    //     $ids = $users->pluck('id')->all();
-    //     $actual = Service::findOrNew($ids, false)->pluck('id')->all();
-    //     $this->assertEquals($expected, $actual);
-
-    //     // Передаем массив моделей.
-    //     $ids = $users->all();
-    //     $actual = Service::findOrNew($ids, false)->pluck('id')->all();
-    //     $this->assertEquals($expected, $actual);
-
-    //     // Передаем коллекцию идентификаторов.
-    //     $ids = $users->pluck('id');
-    //     $actual = Service::findOrNew($ids, false)->pluck('id')->all();
-    //     $this->assertEquals($expected, $actual);
-
-    //     // Передаем коллекцию моделей.
-    //     $ids = $users->collect();
-    //     $actual = Service::findOrNew($ids, false)->pluck('id')->all();
-    //     $this->assertEquals($expected, $actual);
-
-    //     // Передаем коллекцию моделей вместе с отсутствующими в таблице идентификаторами.
-    //     $ids = $users->collect()->concat(['key', 4564646, null]);
-    //     $actual = Service::findOrNew($ids, false)->pluck('id')->all();
-    //     $this->assertEquals($expected, $actual);
-
-    //     // Передаем массив отсутствующих в таблице идентификаторов.
-    //     $this->assertTrue(Service::findOrNew(['key', 4564646, null], false)->isEmpty());
-    // }
-
-    // /**
-    //  * Есть ли метод, возвращающий коллекцию моделей по коллекции идентификаторов или возвращающий коллекцию пустых моделей?
-    //  */
-    // public function test_find_or_new_collection_all(): void
-    // {
-    //     $users = $this->generateUser(3);
-
-    //     $expected = $users->pluck('id')->all();
-
-    //     // Передаем массив идентификаторов.
-    //     $ids = $users->pluck('id')->all();
-    //     $actual = Service::findOrNew($ids, true)->pluck('id')->all();
-    //     $this->assertEquals($expected, $actual);
-
-    //     // Передаем массив моделей.
-    //     $ids = $users->all();
-    //     $actual = Service::findOrNew($ids, true)->pluck('id')->all();
-    //     $this->assertEquals($expected, $actual);
-
-    //     // Передаем коллекцию идентификаторов.
-    //     $ids = $users->pluck('id');
-    //     $actual = Service::findOrNew($ids, true)->pluck('id')->all();
-    //     $this->assertEquals($expected, $actual);
-
-    //     // Передаем коллекцию моделей.
-    //     $ids = $users->collect();
-    //     $actual = Service::findOrNew($ids, true)->pluck('id')->all();
-    //     $this->assertEquals($expected, $actual);
-
-    //     // Передаем коллекцию моделей вместе с отсутствующими в таблице идентификаторами.
-    //     $expected = $users->pluck('id')->concat([null, null, null])->all();
-    //     $ids = $users->collect()->concat(['key', 4564646, null]);
-    //     $actual = Service::findOrNew($ids, true)->pluck('id')->all();
-    //     $this->assertEquals($expected, $actual);
-
-    //     // Передаем массив отсутствующих в таблице идентификаторов.
-    //     $expected = [null, null, null];
-    //     $ids = ['key', 4564646, null];
-    //     $actual = Service::findOrNew($ids, true)->pluck('id')->all();
-    //     $this->assertEquals($expected, $actual);
-    // }
+        // Передаем null и подтверждаем, что запрос к БД не выполнен.
+        $this->resetQueryExecutedCount();
+        $model = Service::findOrNew(null);
+        $this->assertQueryExecutedCount(0);
+        $this->assertFalse($user->is($model));
+        $this->assertModelMissing($model);
+    }
 
     // /**
     //  * Есть ли метод, возвращающий модель по ее идентификатору или возвращающий результат выполнения переданной функции?

@@ -236,32 +236,23 @@ abstract class Service implements Servicable
     /**
      * Возвращает модель по ее идентификатору или создает новый пустой экземпляр модели.
      *
-     * @param  mixed  $id
-     * @param  bool  $all [false] Заменить все отсутствующие идентификаторы на пустой экземпляр модели?
+     * @param  \Illuminate\Database\Eloquent\Model|string|int  $id Идентификатор.
      */
-    public function findOrNew($id, bool $all = false): Model|Collection
+    public function findOrNew(mixed $id): Model
     {
-        $ids = Arr::flatten(Arr::wrap($id));
+        $ids = $this->toArray($id);
 
-        // При передачи модели в метод find класса "Illuminate\Database\Eloquent\Model",
+        // При передачи модели в метод findOrNew класса "Illuminate\Database\Eloquent\Model",
         // она приводится к массиву, т.к. реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
         // Для предотвращения этого мы заменяем модели на их идентификаторы.
-        foreach ($ids as $k => $v) {
-            if ($v instanceof Model) {
-                $ids[$k] = $v->getKey();
-            }
+        [$id] = $this->replaceModelsWithTheirIds($ids);
+
+        // Предотвращает выполнение запроса к БД при передачи null в метод findOrNew.
+        if (is_null($id)) {
+            return $this->model::newModelInstance();
         }
 
-        // Если передать массив с одним идентификатором, то вернется коллекция с одной моделью.
-        $ids = count($ids) === 1 ? $ids[0] : $ids;
-
-        if (is_array($ids) && $all) {
-            $result = array_map(fn ($id) => $this->model::findOrNew($id), $ids);
-
-            return new Collection($result);
-        }
-
-        return $this->model::findOrNew($ids);
+        return $this->model::findOrNew($id);
     }
 
     /**

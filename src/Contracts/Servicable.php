@@ -86,10 +86,9 @@ interface Servicable
     /**
      * Возвращает модель по ее идентификатору или создает новый пустой экземпляр модели.
      *
-     * @param  mixed  $id
-     * @param  bool  $all [false] Заменить все отсутствующие идентификаторы на пустой экземпляр модели?
+     * @param  \Illuminate\Database\Eloquent\Model|string|int  $id Идентификатор.
      */
-    public function findOrNew($id, bool $all = false): Model|Collection;
+    public function findOrNew(mixed $id): Model;
 
     /**
      * Возвращает модель по ее идентификатору или возвращает результат выполнения переданной функции.
