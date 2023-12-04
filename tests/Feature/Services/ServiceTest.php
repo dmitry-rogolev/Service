@@ -9,6 +9,7 @@ use dmitryrogolev\Service\Tests\RefreshDatabase;
 use dmitryrogolev\Service\Tests\TestCase;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Facade;
 
@@ -1126,72 +1127,271 @@ class ServiceTest extends TestCase
         );
     }
 
-    // /**
-    //  * Есть ли метод, возвращающий коллекцию моделей по столбцу?
-    //  */
-    // public function test_where(): void
-    // {
-    //     $user = $this->generateUser(3)->first();
+    /**
+     * Есть ли метод, возвращающий коллекцию моделей по столбцу?
+     */
+    public function test_where(): void
+    {
+        $this->generate(User::class, 3);
+        $user = $this->generate(User::class);
 
-    //     // Передаем значение столбца.
-    //     $this->assertTrue($user->is(Service::where('email', $user->email)->first()));
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                         Подтверждаем возврат коллекции.                        ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Передаем модель.
-    //     $this->assertTrue($user->is(Service::where('email', '=', $user)->first()));
+        $column = 'email';
+        $value = $user->email;
+        $models = Service::where($column, $value);
+        $this->assertInstanceOf(Collection::class, $models);
 
-    //     // Передаем массив.
-    //     $this->assertTrue($user->is(Service::where(['email' => $user->email])->first()));
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                        Передаем столбец и его значение.                        ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Передаем отсутствующее в таблице значение.
-    //     $this->assertTrue(Service::where('email', 'undefined')->isEmpty());
-    // }
+        $column = 'email';
+        $value = $user->email;
+        $model = Service::where($column, $value)->first();
+        $this->assertTrue($user->is($model));
 
-    // /**
-    //  * Есть ли метод, возвращающий модель по столбцу.
-    //  */
-    // public function test_first_where(): void
-    // {
-    //     $user = $this->generateUser();
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Передаем столбец, оператор и значение.                     ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Передаем значение столбца.
-    //     $this->assertTrue($user->is(Service::firstWhere('email', $user->email)));
+        $column = 'email';
+        $operator = '=';
+        $value = $user->email;
+        $model = Service::where($column, $operator, $value)->first();
+        $this->assertTrue($user->is($model));
 
-    //     // Передаем модель.
-    //     $this->assertTrue($user->is(Service::firstWhere('email', '=', $user)));
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                               Передаем замыкание.                              ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Передаем массив.
-    //     $this->assertTrue($user->is(Service::firstWhere(['email' => $user->email])));
+        $column = 'email';
+        $operator = '=';
+        $value = $user->email;
+        $callback = fn ($query) => $query->where($column, $operator, $value);
+        $model = Service::where($callback)->first();
+        $this->assertTrue($user->is($model));
 
-    //     // Передаем отсутствующее в таблице значение.
-    //     $this->assertNull(Service::firstWhere('email', 'undefined'));
-    // }
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                       Передаем массив пар ключ-значений,                       ||
+        // ! ||             где ключ - это имя столбца, а значение - его значение.             ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    // /**
-    //  * Есть ли метод, возвращающий коллекцию моделей, не удовлетворяющих условию?
-    //  */
-    // public function test_where_not(): void
-    // {
-    //     $users = $this->generateUser(3);
-    //     $user = $users->first();
-    //     $expected = $users->slice(1)->pluck('email')->all();
+        $column = ['email' => $user->email];
+        $model = Service::where($column)->first();
+        $this->assertTrue($user->is($model));
 
-    //     // Передаем значение столбца.
-    //     $actual = Service::whereNot('email', $user->email)->pluck('email')->all();
-    //     $this->assertEquals($expected, $actual);
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||       Передаем массив, где каждое его значение представляет собой массив,      ||
+        // ! ||                   состоящий из столбца, оператора и значения.                  ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Передаем модель.
-    //     $actual = Service::whereNot('email', '=', $user)->pluck('email')->all();
-    //     $this->assertEquals($expected, $actual);
+        $column = [
+            ['email', '=', $user->email],
+        ];
+        $model = Service::where($column)->first();
+        $this->assertTrue($user->is($model));
 
-    //     // Передаем массив.
-    //     $actual = Service::whereNot(['email' => $user->email])->pluck('email')->all();
-    //     $this->assertEquals($expected, $actual);
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                   Передаем отсутствующее в таблице значение.                   ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Передаем отсутствующее в таблице значение.
-    //     $expected = $users->pluck('email')->all();
-    //     $actual = Service::whereNot('email', 'undefined')->pluck('email')->all();
-    //     $this->assertEquals($expected, $actual);
-    // }
+        $column = 'email';
+        $value = 'undefined';
+        $this->assertCount(0, Service::where($column, $value));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||               Подтверждаем количество выполненных запросов к БД.               ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $value = $user->email;
+        $this->resetQueryExecutedCount();
+        $model = Service::where($column, $value)->first();
+        $this->assertQueryExecutedCount(1);
+        $this->assertTrue($user->is($model));
+    }
+
+    /**
+     * Есть ли метод, возвращающий первую модель по столбцу.
+     */
+    public function test_first_where(): void
+    {
+        $this->generate(User::class, 3);
+        $user = $this->generate(User::class);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                           Подтверждаем возврат модели                          ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $value = $user->email;
+        $models = Service::firstWhere($column, $value);
+        $this->assertInstanceOf(Model::class, $models);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                        Передаем столбец и его значение.                        ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $value = $user->email;
+        $model = Service::firstWhere($column, $value);
+        $this->assertTrue($user->is($model));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Передаем столбец, оператор и значение.                     ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $operator = '=';
+        $value = $user->email;
+        $model = Service::firstWhere($column, $operator, $value);
+        $this->assertTrue($user->is($model));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                               Передаем замыкание.                              ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $operator = '=';
+        $value = $user->email;
+        $callback = fn ($query) => $query->where($column, $operator, $value);
+        $model = Service::firstWhere($callback);
+        $this->assertTrue($user->is($model));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                       Передаем массив пар ключ-значений,                       ||
+        // ! ||             где ключ - это имя столбца, а значение - его значение.             ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = ['email' => $user->email];
+        $model = Service::firstWhere($column);
+        $this->assertTrue($user->is($model));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||       Передаем массив, где каждое его значение представляет собой массив,      ||
+        // ! ||                   состоящий из столбца, оператора и значения.                  ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = [
+            ['email', '=', $user->email],
+        ];
+        $model = Service::firstWhere($column);
+        $this->assertTrue($user->is($model));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                   Передаем отсутствующее в таблице значение.                   ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $value = 'undefined';
+        $model = Service::firstWhere($column, $value);
+        $this->assertNull($model);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||               Подтверждаем количество выполненных запросов к БД.               ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $value = $user->email;
+        $this->resetQueryExecutedCount();
+        $model = Service::firstWhere($column, $value);
+        $this->assertQueryExecutedCount(1);
+        $this->assertTrue($user->is($model));
+    }
+
+    /**
+     * Есть ли метод, возвращающий коллекцию моделей, не удовлетворяющих условию?
+     */
+    public function test_where_not(): void
+    {
+        $users = $this->generate(User::class, 3);
+        $user = $this->generate(User::class);
+        $expected = $users->pluck('email')->all();
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                         Подтверждаем возврат коллекции.                        ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $value = $user->email;
+        $actual = Service::whereNot($column, $value);
+        $this->assertInstanceOf(Collection::class, $actual);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                        Передаем столбец и его значение.                        ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $value = $user->email;
+        $actual = Service::whereNot($column, $value)->pluck('email')->all();
+        $this->assertEquals($expected, $actual);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Передаем столбец, оператор и значение.                     ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $operator = '=';
+        $value = $user->email;
+        $actual = Service::whereNot($column, $operator, $value)->pluck('email')->all();
+        $this->assertEquals($expected, $actual);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                               Передаем замыкание.                              ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $operator = '=';
+        $value = $user->email;
+        $callback = fn ($query) => $query->where($column, $operator, $value);
+        $actual = Service::whereNot($callback)->pluck('email')->all();
+        $this->assertEquals($expected, $actual);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                       Передаем массив пар ключ-значений,                       ||
+        // ! ||             где ключ - это имя столбца, а значение - его значение.             ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = ['email' => $user->email];
+        $actual = Service::whereNot($column)->pluck('email')->all();
+        $this->assertEquals($expected, $actual);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||       Передаем массив, где каждое его значение представляет собой массив,      ||
+        // ! ||                   состоящий из столбца, оператора и значения.                  ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = [
+            ['email', '=', $user->email],
+        ];
+        $actual = Service::whereNot($column)->pluck('email')->all();
+        $this->assertEquals($expected, $actual);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                   Передаем отсутствующее в таблице значение.                   ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $value = 'undefined';
+        $expected = $users->collect()->push($user)->pluck('email')->all();
+        $actual = Service::whereNot($column, $value)->pluck('email')->all();
+        $this->assertEquals($expected, $actual);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||               Подтверждаем количество выполненных запросов к БД.               ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $value = $user->email;
+        $expected = $users->pluck('email')->all();
+        $this->resetQueryExecutedCount();
+        $actual = Service::whereNot($column, $value)->pluck('email')->all();
+        $this->assertQueryExecutedCount(1);
+        $this->assertEquals($expected, $actual);
+    }
 
     // /**
     //  * Есть ли метод, возвращающий самую позднюю по времени создания модель?

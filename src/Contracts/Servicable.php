@@ -137,28 +137,22 @@ interface Servicable
      * Возвращает коллекцию моделей по столбцу.
      *
      * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
-     * @param  mixed  $operator
-     * @param  mixed  $value
      */
-    public function where($column, $operator = null, $value = null): Collection;
+    public function where(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection;
 
     /**
      * Возвращает первую модель из коллекции, удовлетворяющую условию.
      *
      * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
-     * @param  mixed  $operator
-     * @param  mixed  $value
      */
-    public function firstWhere($column, $operator = null, $value = null): ?Model;
+    public function firstWhere(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): ?Model;
 
     /**
      * Возвращает коллекцию, которая не удовлетворяет условию.
      *
      * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
-     * @param  mixed  $operator
-     * @param  mixed  $value
      */
-    public function whereNot($column, $operator = null, $value = null): Collection;
+    public function whereNot(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection;
 
     /**
      * Возвращает самую позднюю по времени создания модель.

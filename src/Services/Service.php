@@ -338,74 +338,56 @@ abstract class Service implements Servicable
      * Возвращает коллекцию моделей по столбцу.
      *
      * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
-     * @param  mixed  $operator
-     * @param  mixed  $value
      */
-    public function where($column, $operator = null, $value = null): Collection
+    public function where(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection
     {
-        if ($operator instanceof Model) {
-            $operator = $operator->getAttribute($column);
-        }
-
-        if ($value instanceof Model) {
-            $value = $value->getAttribute($column);
-        }
-
-        return $this->model::where($column, $operator, $value)->get();
+        return $this->model::where(...func_get_args())->get();
     }
 
     /**
      * Возвращает первую модель из коллекции, удовлетворяющую условию.
      *
      * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
-     * @param  mixed  $operator
-     * @param  mixed  $value
      */
-    public function firstWhere($column, $operator = null, $value = null): ?Model
+    public function firstWhere(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): ?Model
     {
-        if ($operator instanceof Model) {
-            $operator = $operator->getAttribute($column);
-        }
-
-        if ($value instanceof Model) {
-            $value = $value->getAttribute($column);
-        }
-
-        return $this->model::firstWhere($column, $operator, $value);
+        return $this->model::firstWhere(...func_get_args());
     }
 
     /**
      * Возвращает коллекцию, которая не удовлетворяет условию.
      *
      * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
-     * @param  mixed  $operator
-     * @param  mixed  $value
      */
-    public function whereNot($column, $operator = null, $value = null): Collection
+    public function whereNot(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection
     {
         // Если передать массив, где ключами являются имена столбцов,
         // а значениями - значения этих столбцов, в метод whereNot,
-        // то будет возвращен результат, как при вызове метода where.
+        // то будет возвращен результат, как при вызове метода where (добавляется двойное отрицание).
+        // Например: "select * from "users" where not (not "email" = ? and not "name" = ?)".
         // Поэтому необходимо по отдельности передать ключ-значение в метод whereNot.
-        if (is_array($column) || $column instanceof ArrayAccess) {
+        if (is_array($column)) {
             $query = $this->model::query();
 
             foreach ($column as $k => $v) {
-                $query->whereNot($k, $v);
+                // Если ключ представлен числом, а значение массивом,
+                // то будем считать, что значение содержит столбец, оператор и значение.
+                // Например: $column = [ [ 'email', '=', 'email@email.com' ] ].
+                if (is_numeric($k) && is_array($v)) {
+                    $query->whereNot(...array_values($v));
+                }
+
+                // Иначе будем считать, что ключ - это столбец, а значение - значение этого столбца.
+                // Например: $column = [ 'email' => 'email@email.com' ].
+                else {
+                    $query->whereNot($k, $v);
+                }
             }
 
             return $query->get();
         }
 
-        if ($operator instanceof Model) {
-            $operator = $operator->getAttribute($column);
-        }
-
-        if ($value instanceof Model) {
-            $value = $value->getAttribute($column);
-        }
-
-        return $this->model::whereNot($column, $operator, $value)->get();
+        return $this->model::whereNot(...func_get_args())->get();
     }
 
     /**
@@ -705,26 +687,6 @@ abstract class Service implements Servicable
     }
 
     /**
-     * Приводит переданную модель к массиву.
-     *
-     * @return array<string, mixed>
-     */
-    protected function modelToArray(Model $model): array
-    {
-        return $model->getAttributes();
-    }
-
-    /**
-     * Приводит класс, реализующий интерфейс "Illuminate\Contracts\Support\Arrayable" к массиву.
-     *
-     * @return array<mixed, mixed>
-     */
-    protected function arrayableToArray(Arrayable $arrayable): array
-    {
-        return $arrayable->toArray();
-    }
-
-    /**
      * Приводит переданные параметры функции к массиву.
      *
      * @return array<int, array>
@@ -737,9 +699,9 @@ abstract class Service implements Servicable
             $value = [];
 
             if ($v instanceof Model) {
-                $value = $this->modelToArray($v);
+                $value = $v->getAttributes();
             } elseif ($v instanceof Arrayable) {
-                $value = $this->arrayableToArray($v);
+                $value = $v->toArray();
             } elseif (is_array($v)) {
                 $value = $v;
             }
@@ -757,12 +719,8 @@ abstract class Service implements Servicable
      */
     protected function replaceModelsWithTheirIds(array $models): array
     {
-        foreach ($models as $k => $v) {
-            if ($v instanceof Model) {
-                $models[$k] = $v->getKey();
-            }
-        }
+        $result = array_map(fn ($item) => $item instanceof Model ? $item->getKey() : $item, $models);
 
-        return $models;
+        return array_values($result);
     }
 }
