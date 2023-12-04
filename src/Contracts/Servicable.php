@@ -30,19 +30,35 @@ interface Servicable
     public function getFactory(): string;
 
     /**
-     * Возвращает построитель SQL запросов.
+     * Возвращает коллекцию моделей по столбцу.
+     *
+     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
      */
-    public function query(): Builder;
+    public function where(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection;
 
     /**
-     * Возвращает все модели.
+     * Возвращает первую модель из коллекции, удовлетворяющую условию.
+     *
+     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
      */
-    public function all(): Collection;
+    public function firstWhere(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): ?Model;
 
     /**
-     * Возвращает случайную модель из таблицы.
+     * Возвращает коллекцию, которая не удовлетворяет условию.
+     *
+     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
      */
-    public function random(): ?Model;
+    public function whereNot(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection;
+
+    /**
+     * Возвращает самую позднюю по времени создания модель.
+     */
+    public function latest(): ?Model;
+
+    /**
+     * Возвращает самую раннюю по времени создания модель.
+     */
+    public function oldest(): ?Model;
 
     /**
      * Возвращает модель(-и) по ее(их) идентификатору(-ам).
@@ -134,35 +150,19 @@ interface Servicable
     public function updateOrCreate(mixed $attributes = [], mixed $values = []): Model;
 
     /**
-     * Возвращает коллекцию моделей по столбцу.
-     *
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * Возвращает построитель SQL запросов.
      */
-    public function where(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection;
+    public function query(): Builder;
 
     /**
-     * Возвращает первую модель из коллекции, удовлетворяющую условию.
-     *
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * Возвращает все модели.
      */
-    public function firstWhere(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): ?Model;
+    public function all(): Collection;
 
     /**
-     * Возвращает коллекцию, которая не удовлетворяет условию.
-     *
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * Возвращает случайную модель из таблицы.
      */
-    public function whereNot(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection;
-
-    /**
-     * Возвращает самую позднюю по времени создания модель.
-     */
-    public function latest(): ?Model;
-
-    /**
-     * Возвращает самую раннюю по времени создания модель.
-     */
-    public function oldest(): ?Model;
+    public function random(): ?Model;
 
     /**
      * Проверяет наличие хотябы одной модели в таблице по ее идентификатору или переданному по столбцу.

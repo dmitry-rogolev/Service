@@ -98,27 +98,75 @@ abstract class Service implements Servicable
     }
 
     /**
-     * Возвращает построитель SQL запросов.
+     * Возвращает коллекцию моделей по столбцу.
+     *
+     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
      */
-    public function query(): Builder
+    public function where(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection
     {
-        return $this->model::query();
+        return $this->model::where(...func_get_args())->get();
     }
 
     /**
-     * Возвращает все модели.
+     * Возвращает первую модель из коллекции, удовлетворяющую условию.
+     *
+     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
      */
-    public function all(): Collection
+    public function firstWhere(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): ?Model
     {
-        return $this->model::all();
+        return $this->model::firstWhere(...func_get_args());
     }
 
     /**
-     * Возвращает случайную модель из таблицы.
+     * Возвращает коллекцию, которая не удовлетворяет условию.
+     *
+     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
      */
-    public function random(): ?Model
+    public function whereNot(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection
     {
-        return $this->model::query()->inRandomOrder()->first();
+        // Если передать массив, где ключами являются имена столбцов,
+        // а значениями - значения этих столбцов, в метод whereNot,
+        // то будет возвращен результат, как при вызове метода where (добавляется двойное отрицание).
+        // Например: "select * from "users" where not (not "email" = ? and not "name" = ?)".
+        // Поэтому необходимо по отдельности передать ключ-значение в метод whereNot.
+        if (is_array($column)) {
+            $query = $this->model::query();
+
+            foreach ($column as $k => $v) {
+                // Если ключ представлен числом, а значение массивом,
+                // то будем считать, что значение содержит столбец, оператор и значение.
+                // Например: $column = [ [ 'email', '=', 'email@email.com' ] ].
+                if (is_numeric($k) && is_array($v)) {
+                    $query->whereNot(...array_values($v));
+                }
+
+                // Иначе будем считать, что ключ - это столбец, а значение - значение этого столбца.
+                // Например: $column = [ 'email' => 'email@email.com' ].
+                else {
+                    $query->whereNot($k, $v);
+                }
+            }
+
+            return $query->get();
+        }
+
+        return $this->model::whereNot(...func_get_args())->get();
+    }
+
+    /**
+     * Возвращает самую позднюю по времени создания модель.
+     */
+    public function latest(): ?Model
+    {
+        return $this->model::latest()->first();
+    }
+
+    /**
+     * Возвращает самую раннюю по времени создания модель.
+     */
+    public function oldest(): ?Model
+    {
+        return $this->model::oldest()->first();
     }
 
     /**
@@ -335,75 +383,27 @@ abstract class Service implements Servicable
     }
 
     /**
-     * Возвращает коллекцию моделей по столбцу.
-     *
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * Возвращает построитель SQL запросов.
      */
-    public function where(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection
+    public function query(): Builder
     {
-        return $this->model::where(...func_get_args())->get();
+        return $this->model::query();
     }
 
     /**
-     * Возвращает первую модель из коллекции, удовлетворяющую условию.
-     *
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * Возвращает все модели.
      */
-    public function firstWhere(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): ?Model
+    public function all(): Collection
     {
-        return $this->model::firstWhere(...func_get_args());
+        return $this->model::all();
     }
 
     /**
-     * Возвращает коллекцию, которая не удовлетворяет условию.
-     *
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * Возвращает случайную модель из таблицы.
      */
-    public function whereNot(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection
+    public function random(): ?Model
     {
-        // Если передать массив, где ключами являются имена столбцов,
-        // а значениями - значения этих столбцов, в метод whereNot,
-        // то будет возвращен результат, как при вызове метода where (добавляется двойное отрицание).
-        // Например: "select * from "users" where not (not "email" = ? and not "name" = ?)".
-        // Поэтому необходимо по отдельности передать ключ-значение в метод whereNot.
-        if (is_array($column)) {
-            $query = $this->model::query();
-
-            foreach ($column as $k => $v) {
-                // Если ключ представлен числом, а значение массивом,
-                // то будем считать, что значение содержит столбец, оператор и значение.
-                // Например: $column = [ [ 'email', '=', 'email@email.com' ] ].
-                if (is_numeric($k) && is_array($v)) {
-                    $query->whereNot(...array_values($v));
-                }
-
-                // Иначе будем считать, что ключ - это столбец, а значение - значение этого столбца.
-                // Например: $column = [ 'email' => 'email@email.com' ].
-                else {
-                    $query->whereNot($k, $v);
-                }
-            }
-
-            return $query->get();
-        }
-
-        return $this->model::whereNot(...func_get_args())->get();
-    }
-
-    /**
-     * Возвращает самую позднюю по времени создания модель.
-     */
-    public function latest(): ?Model
-    {
-        return $this->model::latest()->first();
-    }
-
-    /**
-     * Возвращает самую раннюю по времени создания модель.
-     */
-    public function oldest(): ?Model
-    {
-        return $this->model::oldest()->first();
+        return $this->model::query()->inRandomOrder()->first();
     }
 
     /**
