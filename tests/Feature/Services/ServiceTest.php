@@ -750,7 +750,7 @@ class ServiceTest extends TestCase
         // ! ||--------------------------------------------------------------------------------||
 
         $attributes = [
-            'email' => 'admin@admin.com',
+            'email' => fake()->unique()->email(),
         ];
         $values = [
             'name' => $user->name,
@@ -770,7 +770,7 @@ class ServiceTest extends TestCase
         // ! ||--------------------------------------------------------------------------------||
 
         $attributes = collect([
-            'email' => 'admin@admin.com',
+            'email' => fake()->unique()->email(),
         ]);
         $values = collect([
             'name' => $user->name,
@@ -794,82 +794,337 @@ class ServiceTest extends TestCase
             $attributes->only(['email', 'name', 'password']),
             $model->only(['email', 'name', 'password'])
         );
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                Подтверждаем количество выполненных запросов к БД               ||
+        // ! ||                       при получении существующей модели.                       ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'email' => $user->email,
+        ];
+        $this->resetQueryExecutedCount();
+        $model = Service::firstOrNew($attributes);
+        $this->assertQueryExecutedCount(1);
+        $this->assertTrue($user->is($model));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                Подтверждаем количество выполненных запросов к БД               ||
+        // ! ||                     при создании нового экземпляра модели.                     ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = $this->generate(User::class, false);
+        $this->resetQueryExecutedCount();
+        $model = Service::firstOrNew($attributes);
+        $this->assertQueryExecutedCount(1);
+        $this->assertModelMissing($model);
+        $this->assertEquals(
+            $attributes->only(['email', 'name', 'password']),
+            $model->only(['email', 'name', 'password'])
+        );
     }
 
-    // /**
-    //  * Есть ли метод, возвращающий первую запись, совпадающую по аттрибутам,
-    //  * или создающий новую с такими аттрибутами?
-    //  */
-    // public function test_first_or_create(): void
-    // {
-    //     $user = $this->generateUser();
+    /**
+     * Есть ли метод, возвращающий первую запись, совпадающую по аттрибутам,
+     * или создающий новую с такими аттрибутами?
+     */
+    public function test_first_or_create(): void
+    {
+        $firstModelInTable = $this->generate(User::class);
+        $user = $this->generate(User::class);
 
-    //     // Передаем массив аттрибутов, по которым необходимо вести поиск.
-    //     $this->assertTrue($user->is(Service::firstOrCreate($user)));
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||         Передаем массив аттрибутов, по которым необходимо вести поиск.         ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Передаем не существующие данные.
-    //     $model = Service::firstOrCreate([
-    //         'name' => 'Admin',
-    //         'email' => 'admin@admin.com',
-    //         'password' => 'password',
-    //     ]);
-    //     $this->assertModelExists($model);
-    //     $this->assertFalse($user->is($model));
-    //     $this->assertEquals('admin@admin.com', $model->email);
+        $attributes = [
+            'email' => $user->email,
+        ];
+        $model = Service::firstOrCreate($attributes);
+        $this->assertTrue($user->is($model));
 
-    //     // Передаем аттрибуты, которые необходимо добавить при создании новой записи.
-    //     $model = Service::firstOrCreate(collect(['email' => 'admin@admin.com']), collect(['name' => 'Admin', 'password' => 'password']));
-    //     $this->assertModelExists($model);
-    //     $this->assertEquals('Admin', $model->name);
-    //     $this->assertEquals('admin@admin.com', $model->email);
-    // }
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||              Ничего не передаем. Получаем первую запись в таблице.             ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    // /**
-    //  * Есть ли метод, создающий запись или возвращающий первую запись,
-    //  * совпадающую с переданными аттрибутами, в случае ошибки существования уникальных данных?
-    //  */
-    // public function test_create_or_first(): void
-    // {
-    //     // Передаем не существующие данные.
-    //     $model = Service::createOrFirst([
-    //         'name' => 'Admin',
-    //         'email' => 'admin@admin.com',
-    //         'password' => 'password',
-    //     ]);
-    //     $this->assertModelExists($model);
-    //     $this->assertEquals('admin@admin.com', $model->email);
+        $model = Service::firstOrCreate();
+        $this->assertTrue($firstModelInTable->is($model));
 
-    //     // Повторно передаем те же самые данные.
-    //     $model = Service::createOrFirst(collect([
-    //         'name' => 'Admin',
-    //         'email' => 'admin@admin.com',
-    //         'password' => 'password',
-    //     ]));
-    //     $this->assertModelExists($model);
-    //     $this->assertEquals('admin@admin.com', $model->email);
-    //     $this->assertCount(1, Service::where('email', 'admin@admin.com'));
-    // }
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||         Передаем массив аттрибутов, по которым необходимо вести поиск,         ||
+        // ! ||           и массив значений (аттрибутов), которые необходимо добавить          ||
+        // ! ||         к аттрибутам, по которым велся поиск при создании новой модели.        ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    // /**
-    //  * Есть ли метод, создающий или обновляющий запись, совпадающую с переданными аттрибутами?
-    //  */
-    // public function test_update_or_create(): void
-    // {
-    //     // Создаем запись.
-    //     $model = Service::updateOrCreate([
-    //         'name' => 'Admin',
-    //         'email' => 'admin@admin.com',
-    //         'password' => 'password',
-    //     ]);
-    //     $this->assertModelExists($model);
-    //     $this->assertEquals('admin@admin.com', $model->email);
+        $attributes = [
+            'email' => fake()->unique()->email(),
+        ];
+        $values = [
+            'name' => $user->name,
+            'password' => $user->password,
+        ];
+        $model = Service::firstOrCreate($attributes, $values);
+        $this->assertModelExists($model);
+        $this->assertEquals(
+            array_merge($attributes, $values),
+            $model->only(['email', 'name', 'password'])
+        );
 
-    //     // Обновляем существующую запись.
-    //     $model = Service::updateOrCreate(collect(['email' => 'admin@admin.com']), collect(['name' => 'Dmitry']));
-    //     $this->assertModelExists($model);
-    //     $this->assertEquals('Dmitry', $model->name);
-    //     $this->assertEquals('admin@admin.com', $model->email);
-    // }
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||        Передаем коллекцию аттрибутов, по которым необходимо вести поиск,       ||
+        // ! ||         и коллекцию значений (аттрибутов), которые необходимо добавить         ||
+        // ! ||         к аттрибутам, по которым велся поиск при создании новой модели.        ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = collect([
+            'email' => fake()->unique()->email(),
+        ]);
+        $values = collect([
+            'name' => $user->name,
+            'password' => $user->password,
+        ]);
+        $model = Service::firstOrCreate($attributes, $values);
+        $this->assertModelExists($model);
+        $this->assertEquals(
+            $attributes->merge($values)->all(),
+            $model->only(['email', 'name', 'password'])
+        );
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Передаем модель в качестве аттрибутов.                     ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = $this->generate(User::class, false);
+        $model = Service::firstOrCreate($attributes);
+        $this->assertModelExists($model);
+        $this->assertEquals(
+            $attributes->only(['email', 'name', 'password']),
+            $model->only(['email', 'name', 'password'])
+        );
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                Подтверждаем количество выполненных запросов к БД               ||
+        // ! ||                       при получении существующей модели.                       ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'email' => $user->email,
+        ];
+        $this->resetQueryExecutedCount();
+        $model = Service::firstOrCreate($attributes);
+        $this->assertQueryExecutedCount(1);
+        $this->assertTrue($user->is($model));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                Подтверждаем количество выполненных запросов к БД               ||
+        // ! ||                              при создании модели.                              ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = $this->generate(User::class, false);
+        $this->resetQueryExecutedCount();
+        $model = Service::firstOrCreate($attributes);
+        $this->assertQueryExecutedCount(2);
+        $this->assertModelExists($model);
+        $this->assertEquals(
+            $attributes->only(['email', 'name', 'password']),
+            $model->only(['email', 'name', 'password'])
+        );
+    }
+
+    /**
+     * Есть ли метод, создающий запись или возвращающий первую запись,
+     * совпадающую с переданными аттрибутами, в случае ошибки уникальности?
+     */
+    public function test_create_or_first(): void
+    {
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                       Передаем аттрибуты в виде массивов.                      ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'email' => fake()->unique()->email(),
+        ];
+        $values = [
+            'name' => 'Admin',
+            'password' => 'password',
+        ];
+        $model = Service::createOrFirst($attributes, $values);
+        $this->assertModelExists($model);
+        $this->assertEquals(
+            array_merge($attributes, $values),
+            $model->only(['email', 'name', 'password'])
+        );
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Передаем аттрибуты в виде коллекции.                      ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = collect([
+            'email' => fake()->unique()->email(),
+        ]);
+        $values = collect([
+            'name' => 'Admin',
+            'password' => 'password',
+        ]);
+        $model = Service::createOrFirst($attributes, $values);
+        $this->assertModelExists($model);
+        $this->assertEquals(
+            $attributes->merge($values)->all(),
+            $model->only(['email', 'name', 'password'])
+        );
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                        Передаем аттрибуты в виде модели.                       ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = $this->generate(User::class, false);
+        $model = Service::createOrFirst($attributes);
+        $this->assertModelExists($model);
+        $this->assertEquals(
+            $attributes->only(['email', 'name', 'password']),
+            $model->only(['email', 'name', 'password'])
+        );
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Передаем аттрибуты, с уже существующим                     ||
+        // ! ||                        в таблице уникальным аттрибутом.                        ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $model = Service::createOrFirst($attributes);
+        $this->assertModelExists($model);
+        $this->assertCount(1, Service::getModel()::where('email', $attributes->email)->get());
+        $this->assertEquals(
+            $attributes->only(['email', 'name', 'password']),
+            $model->only(['email', 'name', 'password'])
+        );
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                Подтверждаем количество выполненных запросов к БД               ||
+        // ! ||                              при создании модели.                              ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = $this->generate(User::class, false);
+        $this->resetQueryExecutedCount();
+        $model = Service::createOrFirst($attributes);
+        $this->assertQueryExecutedCount(1);
+        $this->assertModelExists($model);
+        $this->assertEquals(
+            $attributes->only(['email', 'name', 'password']),
+            $model->only(['email', 'name', 'password'])
+        );
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                Подтверждаем количество выполненных запросов к БД               ||
+        // ! ||                            при существовании модели.                           ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $this->resetQueryExecutedCount();
+        $model = Service::createOrFirst($attributes);
+        $this->assertQueryExecutedCount(1);
+        $this->assertModelExists($model);
+        $this->assertCount(1, Service::getModel()::where('email', $attributes->email)->get());
+        $this->assertEquals(
+            $attributes->only(['email', 'name', 'password']),
+            $model->only(['email', 'name', 'password'])
+        );
+    }
+
+    /**
+     * Есть ли метод, создающий или обновляющий запись, совпадающую с переданными аттрибутами?
+     */
+    public function test_update_or_create(): void
+    {
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                       Передаем аттрибуты в виде массивов.                      ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'email' => fake()->unique()->email(),
+        ];
+        $values = [
+            'name' => 'Admin',
+            'password' => 'password',
+        ];
+        $model = Service::updateOrCreate($attributes, $values);
+        $this->assertModelExists($model);
+        $this->assertEquals(
+            array_merge($attributes, $values),
+            $model->only(['email', 'name', 'password'])
+        );
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Передаем аттрибуты в виде коллекции.                      ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = collect([
+            'email' => fake()->unique()->email(),
+        ]);
+        $values = collect([
+            'name' => 'Admin',
+            'password' => 'password',
+        ]);
+        $model = Service::updateOrCreate($attributes, $values);
+        $this->assertModelExists($model);
+        $this->assertEquals(
+            $attributes->merge($values)->all(),
+            $model->only(['email', 'name', 'password'])
+        );
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                        Передаем аттрибуты в виде модели.                       ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = $this->generate(User::class, false);
+        $model = Service::updateOrCreate($attributes);
+        $this->assertModelExists($model);
+        $this->assertEquals(
+            $attributes->only(['email', 'name', 'password']),
+            $model->only(['email', 'name', 'password'])
+        );
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Передаем аттрибуты, с уже существующим                     ||
+        // ! ||                        в таблице уникальным аттрибутом.                        ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $values = $this->generate(User::class, false);
+        $model = Service::updateOrCreate($attributes, $values);
+        $this->assertModelExists($model);
+        $this->assertEquals(
+            $values->only(['email', 'name', 'password']),
+            $model->only(['email', 'name', 'password'])
+        );
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                Подтверждаем количество выполненных запросов к БД               ||
+        // ! ||                              при создании модели.                              ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = $this->generate(User::class, false);
+        $this->resetQueryExecutedCount();
+        $model = Service::updateOrCreate($attributes);
+        $this->assertQueryExecutedCount(2);
+        $this->assertModelExists($model);
+        $this->assertEquals(
+            $attributes->only(['email', 'name', 'password']),
+            $model->only(['email', 'name', 'password'])
+        );
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                Подтверждаем количество выполненных запросов к БД               ||
+        // ! ||                             при обновлении модели.                             ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $values = $this->generate(User::class, false);
+        $this->resetQueryExecutedCount();
+        $model = Service::updateOrCreate($attributes, $values);
+        $this->assertQueryExecutedCount(2);
+        $this->assertModelExists($model);
+        $this->assertEquals(
+            $values->only(['email', 'name', 'password']),
+            $model->only(['email', 'name', 'password'])
+        );
+    }
 
     // /**
     //  * Есть ли метод, возвращающий коллекцию моделей по столбцу?

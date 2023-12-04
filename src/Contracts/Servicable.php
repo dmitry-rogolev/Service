@@ -4,7 +4,6 @@ namespace dmitryrogolev\Contracts;
 
 use ArrayAccess;
 use Closure;
-use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -99,7 +98,7 @@ interface Servicable
     public function findOr(mixed $id, Closure $callback): mixed;
 
     /**
-     * Возвращает первую совпадающую по аттрибутам запись или создает новый экземпляр модели с такими аттрибутами, но не сохраняет ее в таблице.
+     * Возвращает первую запись, соответствующую атрибутам, или создает ее экземпляр.
      *
      * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $attributes Аттрибуты, по которым ведется поиск.
      * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $values Аттрибуты, которые необходимо добавить к аттрибутам,
@@ -108,31 +107,31 @@ interface Servicable
     public function firstOrNew(mixed $attributes = [], mixed $values = []): Model;
 
     /**
-     * Возвращает первую запись, совпадающую по аттрибутам, или создает новую с такими аттрибутами.
+     * Возвращает первую запись, соответствующую атрибутам. Если запись не найдена, создает ее.
      *
      * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $attributes Аттрибуты, по которым ведется поиск.
      * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $values Аттрибуты, которые необходимо добавить к аттрибутам,
      * по которым ведется поиск, при создании нового экземпляра модели.
      */
-    public function firstOrCreate(Arrayable|Model|array $attributes = [], Arrayable|Model|array $values = []): Model;
+    public function firstOrCreate(mixed $attributes = [], mixed $values = []): Model;
 
     /**
-     * Создает запись. В случае ошибки существования уникальных данных, возвращает первую запись с такими аттрибутами.
+     * Пытается создать запись. Если происходит нарушение ограничения уникальности, попытается найти соответствующую запись.
      *
      * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $attributes Аттрибуты, по которым ведется поиск.
      * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $values Аттрибуты, которые необходимо добавить к аттрибутам,
      * по которым ведется поиск, при создании нового экземпляра модели.
      */
-    public function createOrFirst(Arrayable|Model|array $attributes = [], Arrayable|Model|array $values = []): Model;
+    public function createOrFirst(mixed $attributes = [], mixed $values = []): Model;
 
     /**
-     * Создает или обновляет запись, совпадающую с переданными аттрибутами.
+     * Создает или обновляет запись, соответствующую атрибутам, и заполняет ее значениями.
      *
      * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $attributes Аттрибуты, по которым ведется поиск.
      * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $values Аттрибуты, которые необходимо добавить к аттрибутам,
-     * по которым ведется поиск, при создании нового экземпляра модели.
+     * по которым ведется поиск, при создании нового экземпляра модели. При существовании записи, эти аттрибуты будут переданы для обновления.
      */
-    public function updateOrCreate(Arrayable|Model|array $attributes, Arrayable|Model|array $values = []): Model;
+    public function updateOrCreate(mixed $attributes = [], mixed $values = []): Model;
 
     /**
      * Возвращает коллекцию моделей по столбцу.
