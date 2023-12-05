@@ -214,12 +214,11 @@ interface Servicable
     public function random(): ?Model;
 
     /**
-     * Проверяет наличие хотябы одной модели в таблице по ее идентификатору или переданному по столбцу.
+     * Проверяет наличие хотябы одной модели в таблице по ее идентификатору или уникальному ключу.
      *
-     * @param  mixed  $value Идентификатор или значение столбца.
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column Имя столбца. По умолчанию: первичный ключ.
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$id Идентификатор(-ы) или уникальный(-е) ключ(-и).
      */
-    public function hasOne($value, $column = null): bool;
+    public function hasOne(mixed ...$id): bool;
 
     /**
      * Проверяет наличие всех моделей в таблице по их идентификаторам.

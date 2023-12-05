@@ -515,30 +515,13 @@ abstract class Service implements Servicable
     }
 
     /**
-     * Проверяет наличие хотябы одной модели в таблице по ее идентификатору или переданному по столбцу.
+     * Проверяет наличие хотябы одной модели в таблице по ее идентификатору или уникальному ключу.
      *
-     * @param  mixed  $value Идентификатор или значение столбца.
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column Имя столбца. По умолчанию: первичный ключ.
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$id Идентификатор(-ы) или уникальный(-е) ключ(-и).
      */
-    public function hasOne($value, $column = null): bool
+    public function hasOne(mixed ...$id): bool
     {
-        $values = ! is_array($value) ? Arr::wrap($value) : $value;
-
-        foreach ($values as $key => $value) {
-            if (is_string($key) && $this->firstWhere($key, $value)) {
-                return true;
-            }
-
-            if (! is_null($column) && $this->firstWhere($column, $value)) {
-                return true;
-            }
-
-            if (is_null($column) && $this->find($value)) {
-                return true;
-            }
-        }
-
-        return false;
+        return (bool) $this->firstWhereUniqueKey($id);
     }
 
     /**
