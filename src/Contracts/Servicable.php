@@ -30,9 +30,57 @@ interface Servicable
     public function getFactory(): string;
 
     /**
+     * Возвращает список имен столбцов с уникальными значениями,
+     * которые можно использовать для идентификации.
+     *
+     * @return array<int, string>
+     */
+    public function getUniqueKeys(): array;
+
+    /**
+     * Возвращает коллекцию моделей по их идентификаторам.
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$id Идентификатор или коллекция идентификаторов.
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
+     */
+    public function whereKey(mixed ...$id): Collection;
+
+    /**
+     * Возвращает коллекцию всех моделей, за исключением тех, которые имеют переданные идентификаторы.
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$id Идентификатор или коллекция идентификаторов.
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
+     */
+    public function whereKeyNot(mixed ...$id): Collection;
+
+    /**
+     * Возвращает коллекцию моделей по ее уникальному ключу.
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$key Ключ или коллекция уникальных ключей.
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
+     */
+    public function whereUniqueKey(mixed ...$key): Collection;
+
+    /**
+     * Возвращает все записи, за исключением тех, которые содержат переданные уникальные ключи.
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$key Ключ или коллекция уникальных ключей.
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
+     */
+    public function whereUniqueKeyNot(mixed ...$key): Collection;
+
+    /**
+     * Возвращает первую модель, имеющую переданный уникальный ключ.
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$key Ключ или коллекция уникальных ключей.
+     */
+    public function firstWhereUniqueKey(mixed ...$key): ?Model;
+
+    /**
      * Возвращает коллекцию моделей по столбцу.
      *
      * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function where(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection;
 
@@ -47,6 +95,7 @@ interface Servicable
      * Возвращает коллекцию, которая не удовлетворяет условию.
      *
      * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function whereNot(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection;
 

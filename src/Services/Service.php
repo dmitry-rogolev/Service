@@ -38,6 +38,14 @@ abstract class Service implements Servicable
     protected string $factory;
 
     /**
+     * Список имен столбцов с уникальными значениями,
+     * которые можно использовать для идентификации.
+     *
+     * @var array<int, string>
+     */
+    protected array $uniqueKeys = [];
+
+    /**
      * Возвращает имя модели сервиса.
      */
     public function getModel(): string
@@ -86,6 +94,17 @@ abstract class Service implements Servicable
     }
 
     /**
+     * Возвращает список имен столбцов с уникальными значениями,
+     * которые можно использовать для идентификации.
+     *
+     * @return array<int, string>
+     */
+    public function getUniqueKeys(): array
+    {
+        return isset($this->uniqueKeys) ? $this->uniqueKeys : [];
+    }
+
+    /**
      * Изменяет имя фабрики модели.
      */
     protected function setFactory(string $factory): static
@@ -98,9 +117,109 @@ abstract class Service implements Servicable
     }
 
     /**
+     * Возвращает коллекцию моделей по их идентификаторам.
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$id Идентификатор или коллекция идентификаторов.
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
+     */
+    public function whereKey(mixed ...$id): Collection
+    {
+        $ids = $this->toFlattenArray($id);
+
+        // Заменяем модели на их идентификаторы.
+        $ids = $this->replaceModelsWithTheirIds($ids);
+
+        return $this->model::whereKey($ids)->get();
+    }
+
+    /**
+     * Возвращает коллекцию всех моделей, за исключением тех, которые имеют переданные идентификаторы.
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$id Идентификатор или коллекция идентификаторов.
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
+     */
+    public function whereKeyNot(mixed ...$id): Collection
+    {
+        $ids = $this->toFlattenArray($id);
+
+        // Заменяем модели на их идентификаторы.
+        $ids = $this->replaceModelsWithTheirIds($ids);
+
+        return $this->model::whereKeyNot($ids)->get();
+    }
+
+    /**
+     * Возвращает коллекцию моделей по ее уникальному ключу.
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$key Ключ или коллекция уникальных ключей.
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
+     */
+    public function whereUniqueKey(mixed ...$key): Collection
+    {
+        $values = $this->toFlattenArray($key);
+
+        // Заменяем модели на значения уникальных аттрибутов.
+        $values = $this->replaceModelsWithTheirUniqueKeys($values);
+
+        // Строим запрос на получение записей по первичному ключу
+        // или по другим уникальным столбцам.
+        return tap($this->model::whereKey($values), function ($query) use ($values) {
+            foreach ($this->uniqueKeys as $key) {
+                $query->orWhereIn($key, $values);
+            }
+        })->get();
+    }
+
+    /**
+     * Возвращает все записи, за исключением тех, которые содержат переданные уникальные ключи.
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$key Ключ или коллекция уникальных ключей.
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
+     */
+    public function whereUniqueKeyNot(mixed ...$key): Collection
+    {
+        $values = $this->toFlattenArray($key);
+
+        // Заменяем модели на значения уникальных аттрибутов и отфильтровываем пустые значения.
+        $values = array_filter(
+            $this->replaceModelsWithTheirUniqueKeys($values)
+        );
+
+        // Строим запрос на получение записей, первичные ключи
+        // или уникальные столбцы которых не содержатся в переданных ключах.
+        return tap($this->model::whereKeyNot($values), function ($query) use ($values) {
+            foreach ($this->uniqueKeys as $key) {
+                $query->whereNotIn($key, $values);
+            }
+        })->get();
+    }
+
+    /**
+     * Возвращает первую модель, имеющую переданный уникальный ключ.
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$key Ключ или коллекция уникальных ключей.
+     */
+    public function firstWhereUniqueKey(mixed ...$key): ?Model
+    {
+        $values = $this->toFlattenArray($key);
+
+        // Заменяем модели на значения уникальных аттрибутов.
+        $values = $this->replaceModelsWithTheirUniqueKeys($values);
+
+        // Строим запрос на получение записей по первичному ключу
+        // или по другим уникальным столбцам.
+        return tap($this->model::whereKey($values), function ($query) use ($values) {
+            foreach ($this->uniqueKeys as $key) {
+                $query->orWhereIn($key, $values);
+            }
+        })->first();
+    }
+
+    /**
      * Возвращает коллекцию моделей по столбцу.
      *
      * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function where(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection
     {
@@ -121,6 +240,7 @@ abstract class Service implements Servicable
      * Возвращает коллекцию, которая не удовлетворяет условию.
      *
      * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function whereNot(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection
     {
@@ -184,9 +304,7 @@ abstract class Service implements Servicable
             return $this->findMany($ids);
         }
 
-        // При передачи модели в метод find класса "Illuminate\Database\Eloquent\Model",
-        // она приводится к массиву, т.к. реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
-        // Для предотвращения этого мы заменяем модели на их идентификаторы.
+        // Заменяем модели на их идентификаторы.
         [$id] = $this->replaceModelsWithTheirIds($ids);
 
         // Предотвращает выполнение запроса к БД при передачи null в метод find.
@@ -207,9 +325,7 @@ abstract class Service implements Servicable
     {
         $ids = $this->toFlattenArray($ids);
 
-        // При передачи модели в метод findMany класса "Illuminate\Database\Eloquent\Model",
-        // она приводится к массиву, т.к. реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
-        // Для предотвращения этого мы заменяем модели на их идентификаторы.
+        // Заменяем модели на их идентификаторы.
         $ids = $this->replaceModelsWithTheirIds($ids);
 
         return $this->model::findMany($ids);
@@ -233,9 +349,7 @@ abstract class Service implements Servicable
             return $this->findManyOrFail($ids, $all);
         }
 
-        // При передачи модели в метод findOrFail класса "Illuminate\Database\Eloquent\Model",
-        // она приводится к массиву, т.к. реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
-        // Для предотвращения этого мы заменяем модели на их идентификаторы.
+        // Заменяем модели на их идентификаторы.
         [$id] = $this->replaceModelsWithTheirIds($ids);
 
         // Предотвращает выполнение запроса к БД при передачи null в метод findOrFail.
@@ -259,9 +373,7 @@ abstract class Service implements Servicable
     {
         $ids = $this->toFlattenArray($ids);
 
-        // При передачи модели в метод findOrFail класса "Illuminate\Database\Eloquent\Model",
-        // она приводится к массиву, т.к. реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
-        // Для предотвращения этого мы заменяем модели на их идентификаторы.
+        // Заменяем модели на их идентификаторы.
         $ids = $this->replaceModelsWithTheirIds($ids);
 
         // Метод findOrFail выбрасывает исключение,
@@ -290,9 +402,7 @@ abstract class Service implements Servicable
     {
         $ids = $this->toFlattenArray($id);
 
-        // При передачи модели в метод findOrNew класса "Illuminate\Database\Eloquent\Model",
-        // она приводится к массиву, т.к. реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
-        // Для предотвращения этого мы заменяем модели на их идентификаторы.
+        // Заменяем модели на их идентификаторы.
         [$id] = $this->replaceModelsWithTheirIds($ids);
 
         // Предотвращает выполнение запроса к БД при передачи null в метод findOrNew.
@@ -313,9 +423,7 @@ abstract class Service implements Servicable
     {
         $ids = $this->toFlattenArray($id);
 
-        // При передачи модели в метод findOr класса "Illuminate\Database\Eloquent\Model",
-        // она приводится к массиву, т.к. реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
-        // Для предотвращения этого мы заменяем модели на их идентификаторы.
+        // Заменяем модели на их идентификаторы.
         [$id] = $this->replaceModelsWithTheirIds($ids);
 
         // Предотвращает выполнение запроса к БД при передачи null в метод findOr.
@@ -722,5 +830,31 @@ abstract class Service implements Servicable
         $result = array_map(fn ($item) => $item instanceof Model ? $item->getKey() : $item, $models);
 
         return array_values($result);
+    }
+
+    /**
+     * Заменяет модели на их уникальные ключи.
+     *
+     * @return array<int, mixed>
+     */
+    protected function replaceModelsWithTheirUniqueKeys(array $models): array
+    {
+        $result = [];
+
+        foreach ($models as $model) {
+            if ($model instanceof Model) {
+                $keys = [$model->getKey()];
+
+                foreach ($this->uniqueKeys as $key) {
+                    $keys[] = $model->getAttribute($key);
+                }
+
+                $result[] = $keys;
+            } else {
+                $result[] = $model;
+            }
+        }
+
+        return Arr::flatten($result);
     }
 }

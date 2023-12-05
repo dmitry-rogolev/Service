@@ -25,6 +25,11 @@ class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function generate(string $class, array|int|bool $count = null, array|bool $state = [], bool $create = true): Model|Collection
     {
+        if (is_bool($state)) {
+            $create = $state;
+            $state = [];
+        }
+
         if (is_array($count)) {
             $state = $count;
             $count = null;
@@ -33,11 +38,6 @@ class TestCase extends \Orchestra\Testbench\TestCase
         if (is_bool($count)) {
             $create = $count;
             $count = null;
-        }
-
-        if (is_bool($state)) {
-            $create = $state;
-            $state = [];
         }
 
         $factory = $class::factory($count, $state);
