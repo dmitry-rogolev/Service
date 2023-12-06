@@ -2088,34 +2088,226 @@ class ServiceTest extends TestCase
         $this->assertQueryExecutedCount(1);
     }
 
-    // /**
-    //  * Есть ли метод, создающий экземпляр модели, но не сохраняющий ее в таблицу?
-    //  */
-    // public function test_make(): void
-    // {
-    //     $model = Service::make([
-    //         'name' => 'Admin',
-    //         'email' => 'admin@admin.com',
-    //         'password' => 'password',
-    //     ]);
+    /**
+     * Есть ли метод, проверяющий наличие записи по переданному условию?
+     */
+    public function test_has_where(): void
+    {
+        $this->generate(User::class, 3);
+        $user = $this->generate(User::class);
 
-    //     $this->assertEquals('admin@admin.com', $model->email);
-    //     $this->assertModelMissing($model);
-    // }
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                   Подтверждаем возврат логического значения.                   ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    // /**
-    //  * Есть ли метод, создающий модель, только если она не существует в таблице?
-    //  *
-    //  * @return void
-    //  */
-    // public function test_make_if_not_exists(): void
-    // {
-    //     $attributes = ['name' => 'Admin', 'slug' => 'admin'];
+        $column = 'email';
+        $value = $user->email;
+        $condition = Service::hasWhere($column, $value);
+        $this->assertIsBool($condition);
 
-    //     $this->assertNotNull(Service::makeIfNotExists($attributes));
-    //     Service::userModel()::create($attributes);
-    //     $this->assertNull(Service::makeIfNotExists($attributes));
-    // }
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                        Передаем столбец и его значение.                        ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $value = $user->email;
+        $condition = Service::hasWhere($column, $value);
+        $this->assertTrue($condition);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Передаем столбец, оператор и значение.                     ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $operator = '=';
+        $value = $user->email;
+        $condition = Service::hasWhere($column, $operator, $value);
+        $this->assertTrue($condition);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                               Передаем замыкание.                              ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $operator = '=';
+        $value = $user->email;
+        $callback = fn ($query) => $query->where($column, $operator, $value);
+        $condition = Service::hasWhere($callback);
+        $this->assertTrue($condition);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                       Передаем массив пар ключ-значений,                       ||
+        // ! ||             где ключ - это имя столбца, а значение - его значение.             ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = ['email' => $user->email];
+        $condition = Service::hasWhere($column);
+        $this->assertTrue($condition);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||       Передаем массив, где каждое его значение представляет собой массив,      ||
+        // ! ||                   состоящий из столбца, оператора и значения.                  ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = [
+            ['email', '=', $user->email],
+        ];
+        $model = Service::hasWhere($column);
+        $this->assertTrue($condition);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                   Передаем отсутствующее в таблице значение.                   ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $value = 'undefined';
+        $condition = Service::hasWhere($column, $value);
+        $this->assertFalse($condition);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||               Подтверждаем количество выполненных запросов к БД.               ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $column = 'email';
+        $value = $user->email;
+        $this->resetQueryExecutedCount();
+        Service::hasWhere($column, $value);
+        $this->assertQueryExecutedCount(1);
+    }
+
+    /**
+     * Есть ли метод, создающий экземпляр модели, но не сохраняющий ее в таблицу?
+     */
+    public function test_make(): void
+    {
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                         Подтверждаем получение модели.                         ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'name' => 'Admin',
+            'email' => 'admin@admin.com',
+            'password' => 'password',
+        ];
+        $model = Service::make($attributes);
+        $this->assertInstanceOf(Model::class, $model);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                           Передаем массив аттрибутов.                          ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'name' => 'Admin',
+            'email' => 'admin@admin.com',
+            'password' => 'password',
+        ];
+        $model = Service::make($attributes);
+        $this->assertEquals(
+            $attributes,
+            $model->only(['name', 'email', 'password'])
+        );
+        $this->assertModelMissing($model);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                         Передаем коллекцию аттрибутов.                         ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = collect([
+            'name' => 'Admin',
+            'email' => 'admin@admin.com',
+            'password' => 'password',
+        ]);
+        $model = Service::make($attributes);
+        $this->assertEquals(
+            $attributes->all(),
+            $model->only(['name', 'email', 'password'])
+        );
+        $this->assertModelMissing($model);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||               Подтверждаем количество выполненных запросов к БД.               ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'name' => 'Admin',
+            'email' => 'admin@admin.com',
+            'password' => 'password',
+        ];
+        $this->resetQueryExecutedCount();
+        Service::make($attributes);
+        $this->assertQueryExecutedCount(0);
+    }
+
+    /**
+     * Есть ли метод, создающий модель, только если она не существует в таблице?
+     */
+    public function test_make_if_not_exists(): void
+    {
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                         Подтверждаем получение модели.                         ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'name' => 'Admin',
+            'email' => 'admin@admin.com',
+            'password' => 'password',
+        ];
+        $model = Service::makeIfNotExists($attributes);
+        $this->assertInstanceOf(Model::class, $model);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                           Передаем массив аттрибутов.                          ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'name' => 'Admin',
+            'email' => 'admin@admin.com',
+            'password' => 'password',
+        ];
+        $model = Service::makeIfNotExists($attributes);
+        $this->assertEquals(
+            $attributes,
+            $model->only(['name', 'email', 'password'])
+        );
+        $this->assertModelMissing($model);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                         Передаем коллекцию аттрибутов.                         ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = collect([
+            'name' => 'Admin',
+            'email' => 'admin@admin.com',
+            'password' => 'password',
+        ]);
+        $model = Service::makeIfNotExists($attributes);
+        $this->assertEquals(
+            $attributes->all(),
+            $model->only(['name', 'email', 'password'])
+        );
+        $this->assertModelMissing($model);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                   Передаем существующие в таблице аттрибуты.                   ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = $this->generate(User::class)->only(['name', 'email', 'password']);
+        $model = Service::makeIfNotExists($attributes);
+        $this->assertNull($model);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||               Подтверждаем количество выполненных запросов к БД.               ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'name' => 'Admin',
+            'email' => 'admin@admin.com',
+            'password' => 'password',
+        ];
+        $this->resetQueryExecutedCount();
+        Service::makeIfNotExists($attributes);
+        $this->assertQueryExecutedCount(1);
+    }
 
     // /**
     //  * Есть ли метод, создающий группу моделей?

@@ -4,6 +4,7 @@ namespace dmitryrogolev\Contracts;
 
 use ArrayAccess;
 use Closure;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -235,14 +236,21 @@ interface Servicable
     public function has(mixed $id, bool $all = false): bool;
 
     /**
-     * Создать экземпляр модели, но не сохранять ее в таблицу.
+     * Проверяет наличие записи в таблице по переданному условию.
+     *
+     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
      */
-    public function make(array $attributes = []): Model;
+    public function hasWhere(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): bool;
 
     /**
-     * Создать модель, только если она не существует в таблице.
+     * Создает экземпляр модели, но не сохраняет ее в таблицу.
      */
-    public function makeIfNotExists(array $attributes = []): ?Model;
+    public function make(Arrayable|array $attributes = []): Model;
+
+    /**
+     * Создает экземпляр модели, только если она не существует в таблице.
+     */
+    public function makeIfNotExists(Arrayable|array $attributes = []): ?Model;
 
     /**
      * Создать группу моделей.

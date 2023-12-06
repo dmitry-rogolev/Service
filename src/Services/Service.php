@@ -541,19 +541,33 @@ abstract class Service implements Servicable
     }
 
     /**
-     * Создать экземпляр модели, но не сохранять ее в таблицу.
+     * Проверяет наличие записи в таблице по переданному условию.
+     *
+     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
      */
-    public function make(array $attributes = []): Model
+    public function hasWhere(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): bool
     {
+        return $this->model::where(...func_get_args())->exists();
+    }
+
+    /**
+     * Создает экземпляр модели, но не сохраняет ее в таблицу.
+     */
+    public function make(Arrayable|array $attributes = []): Model
+    {
+        $attributes = $this->toArray($attributes);
+
         return $this->model::make($attributes);
     }
 
     /**
-     * Создать модель, только если она не существует в таблице.
+     * Создает экземпляр модели, только если она не существует в таблице.
      */
-    public function makeIfNotExists(array $attributes = []): ?Model
+    public function makeIfNotExists(Arrayable|array $attributes = []): ?Model
     {
-        return $this->make($attributes);
+        $attributes = $this->toArray($attributes);
+
+        return ! $this->hasWhere($attributes) ? $this->make($attributes) : null;
     }
 
     /**
@@ -756,16 +770,6 @@ abstract class Service implements Servicable
     }
 
     /**
-     * Приводит переданной значение к выровненному массиву.
-     *
-     * @return array<int, mixed>
-     */
-    protected function toFlattenArray(mixed $value): array
-    {
-        return Arr::flatten([$value]);
-    }
-
-    /**
      * Строит запрос на получение моделей по уникальным столбцам.
      */
     protected function buildQueryWhereUniqueKey(array $ids): Builder
@@ -821,6 +825,24 @@ abstract class Service implements Servicable
                 $query->whereNot($column, $operator, $value, $boolean);
             }
         });
+    }
+
+    /**
+     * Приводит переданной значение к выровненному массиву.
+     *
+     * @return array<int, mixed>
+     */
+    protected function toFlattenArray(mixed $value): array
+    {
+        return Arr::flatten([$value]);
+    }
+
+    /**
+     * Приводит переданное значение к массиву.
+     */
+    protected function toArray(mixed $value): array
+    {
+        return $value instanceof Arrayable ? $value->toArray() : Arr::wrap($value);
     }
 
     /**
