@@ -321,39 +321,12 @@ interface Servicable
     public function generate(mixed $attributes = [], int|bool $count = null, bool $create = true): Model|Collection;
 
     /**
-     * Обновляет модель.
-     */
-    public function update(Model $model, array $attributes): Model;
-
-    /**
-     * Обновляет модель.
-     */
-    public function fill(Model $model, array $attributes): Model;
-
-    /**
-     * Удаляет модель.
-     */
-    public function delete(Model $model): ?bool;
-
-    /**
      * Очищает таблицу.
      */
     public function truncate(): void;
 
     /**
-     * Удаляет модель.
-     */
-    public function forceDelete(Model $model): ?bool;
-
-    /**
-     * Восстанавливает модель.
-     *
-     * @param  \Illuminate\Database\Eloquent\Model  $model
-     */
-    public function restore($model): bool;
-
-    /**
-     * Запускает сидер ролей.
+     * Запускает сидер модели.
      */
     public function seed(): void;
 }

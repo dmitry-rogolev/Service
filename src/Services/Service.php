@@ -697,51 +697,11 @@ abstract class Service implements Servicable
      */
     public function generate(mixed $attributes = [], int|bool $count = null, bool $create = true): Model|Collection
     {
-        if (is_bool($count)) {
-            $create = $count;
-            $count = null;
-        }
-
-        if (is_int($attributes)) {
-            $count = $attributes;
-            $attributes = [];
-        }
-
-        if (is_bool($attributes)) {
-            $create = $attributes;
-            $attributes = [];
-        }
+        [$attributes, $count, $create] = $this->parseGenerateParams(...func_get_args());
 
         $factory = $this->factory($count, $attributes);
 
         return $create ? $factory->create() : $factory->make();
-    }
-
-    /**
-     * Обновляет модель.
-     */
-    public function update(Model $model, array $attributes): Model
-    {
-        $model->fill($attributes);
-        $model->save();
-
-        return $model;
-    }
-
-    /**
-     * Обновляет модель.
-     */
-    public function fill(Model $model, array $attributes): Model
-    {
-        return $this->update($model, $attributes);
-    }
-
-    /**
-     * Удаляет модель.
-     */
-    public function delete(Model $model): ?bool
-    {
-        return $model->delete();
     }
 
     /**
@@ -753,29 +713,13 @@ abstract class Service implements Servicable
     }
 
     /**
-     * Удаляет модель.
-     */
-    public function forceDelete(Model $model): ?bool
-    {
-        return $model->forceDelete();
-    }
-
-    /**
-     * Восстанавливает модель.
-     *
-     * @param  \Illuminate\Database\Eloquent\Model  $model
-     */
-    public function restore($model): bool
-    {
-        return $model->restore();
-    }
-
-    /**
      * Запускает сидер модели.
      */
     public function seed(): void
     {
-        app($this->seeder)->run();
+        if (! is_null($this->getSeeder())) {
+            app($this->getSeeder())->run();
+        }
     }
 
     /**
@@ -834,6 +778,34 @@ abstract class Service implements Servicable
                 $query->whereNot($column, $operator, $value, $boolean);
             }
         });
+    }
+
+    /**
+     * Парсит параметры для метода "generate".
+     *
+     * @param  \Closure|\Illuminate\Contracts\Support\Arrayable|array|bool|null  $attributes Аттрибуты, которые необходимо передать модели в конструктор.
+     * @param  int|bool|null  $count Количество моделей, которое необходимо создать.
+     * @param  bool  $create [true] Сохранить ли созданный экземпляр модели в таблице?
+     * @return array<int, mixed>
+     */
+    protected function parseGenerateParams(mixed $attributes = [], int|bool $count = null, bool $create = true): array
+    {
+        if (is_bool($count)) {
+            $create = $count;
+            $count = null;
+        }
+
+        if (is_int($attributes)) {
+            $count = $attributes;
+            $attributes = [];
+        }
+
+        if (is_bool($attributes)) {
+            $create = $attributes;
+            $attributes = [];
+        }
+
+        return [$attributes, $count, $create];
     }
 
     /**

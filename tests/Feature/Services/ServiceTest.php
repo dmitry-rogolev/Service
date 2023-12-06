@@ -2875,94 +2875,42 @@ class ServiceTest extends TestCase
         $this->assertQueryExecutedCount($count);
     }
 
-    // /**
-    //  * Есть ли метод, обновляющий роль?
-    //  *
-    //  * @return void
-    //  */
-    // public function test_update(): void
-    // {
-    //     $user = Service::generate(['slug' => 'user']);
-    //     Service::update($user, ['slug' => 'admin']);
-    //     $this->assertEquals('admin', $user->getSlug());
+    /**
+     * Есть ли метод, очищающий таблицу?
+     */
+    public function test_truncate(): void
+    {
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Подтверждаем полную очистку таблицы.                      ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     $user = Service::generate(['slug' => 'moderator']);
-    //     Service::fill($user, ['slug' => 'editor']);
-    //     $this->assertEquals('editor', $user->getSlug());
-    // }
+        Service::generate(3);
+        $this->assertCount(3, Service::all());
+        Service::truncate();
+        $this->assertCount(0, Service::all());
 
-    // /**
-    //  * Есть ли метод, удаляющий модель?
-    //  *
-    //  * @return void
-    //  */
-    // public function test_delete(): void
-    // {
-    //     $user = Service::generate();
-    //     $this->assertTrue(Service::delete($user));
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||               Подтверждаем количество выполненных запросов к БД.               ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     if (Service::usesSoftDeletes()) {
-    //         $this->assertSoftDeleted($user);
-    //     } else {
-    //         $this->assertModelMissing($user);
-    //     }
-    // }
+        $this->resetQueryExecutedCount();
+        Service::truncate();
+        $this->assertQueryExecutedCount(2);
+    }
 
-    // /**
-    //  * Есть ли метод, очищающий таблицу?
-    //  *
-    //  * @return void
-    //  */
-    // public function test_truncate(): void
-    // {
-    //     Service::generate(3);
-    //     $this->assertCount(3, Service::all());
-    //     Service::truncate();
-    //     $this->assertCount(0, Service::all());
-    // }
+    /**
+     * Есть ли метод, запускающий сидер моделей?
+     */
+    public function test_seed(): void
+    {
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                        Подтверждаем заполнение таблицы.                        ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    // /**
-    //  * Есть ли метод, удаляющий модель?
-    //  *
-    //  * @return void
-    //  */
-    // public function test_force_delete(): void
-    // {
-    //     $user = Service::generate();
-    //     $this->assertModelExists($user);
-    //     Service::forceDelete($user);
-    //     $this->assertModelMissing($user);
-    // }
-
-    // /**
-    //  * Есть ли метод, восстанавливающий модель после программного удаления?
-    //  *
-    //  * @return void
-    //  */
-    // public function test_restore(): void
-    // {
-    //     if (! Service::usesSoftDeletes()) {
-    //         $this->markTestSkipped('Программное удаление моделей отключено.');
-    //     }
-
-    //     $user = Service::generate();
-    //     Service::delete($user);
-    //     $this->assertSoftDeleted($user);
-    //     Service::restore($user);
-    //     $this->assertNotSoftDeleted($user);
-    // }
-
-    // /**
-    //  * Есть ли метод, запускающий сидер ролей?
-    //  *
-    //  * @return void
-    //  */
-    // public function test_seed(): void
-    // {
-    //     $this->assertCount(0, Service::all());
-    //     Service::seed();
-    //     $this->assertNotCount(0, Service::all());
-    // }
+        $this->assertCount(0, Service::all());
+        Service::seed();
+        $this->assertNotCount(0, Service::all());
+    }
 }
 
 class ItemService extends \dmitryrogolev\Services\Service
