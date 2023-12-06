@@ -38,6 +38,31 @@ interface Servicable
     public function uniqueKeys(): array;
 
     /**
+     * Создает экземпляр модели, но не сохраняет ее в таблицу.
+     */
+    public function make(Arrayable|array $attributes = []): Model;
+
+    /**
+     * Создает экземпляр модели, только если она не существует в таблице.
+     */
+    public function makeIfNotExists(Arrayable|array $attributes = []): ?Model;
+
+    /**
+     * Создать группу экземпляров моделей.
+     *
+     * @param  \ArrayAccess|\Illuminate\Contracts\Support\Arrayable|array  $group Группа аттрибутов.
+     * @param  bool  $ifNotExists [false] Создавать модели, только если их не существует в таблице?
+     */
+    public function makeGroup(ArrayAccess|Arrayable|array $group, bool $ifNotExists = false): Collection;
+
+    /**
+     * Создать группу экземпляров моделей.
+     *
+     * @param  \ArrayAccess|\Illuminate\Contracts\Support\Arrayable|array  $group Группа аттрибутов.
+     */
+    public function makeGroupIfNotExists(ArrayAccess|Arrayable|array $group): Collection;
+
+    /**
      * Возвращает коллекцию моделей по их идентификаторам.
      *
      * @param  \Illuminate\Contracts\Support\Arrayable|array|string|int  ...$id Идентификатор или коллекция идентификаторов.
@@ -79,7 +104,7 @@ interface Servicable
     /**
      * Возвращает коллекцию моделей по столбцу.
      *
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @param  \Closure|string|\Illuminate\Contracts\Support\Arrayable|array|\Illuminate\Contracts\Database\Query\Expression  $column
      * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function where(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection;
@@ -87,14 +112,14 @@ interface Servicable
     /**
      * Возвращает первую модель из коллекции, удовлетворяющую условию.
      *
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @param  \Closure|string|\Illuminate\Contracts\Support\Arrayable|array|\Illuminate\Contracts\Database\Query\Expression  $column
      */
     public function firstWhere(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): ?Model;
 
     /**
      * Возвращает коллекцию, которая не удовлетворяет условию.
      *
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @param  \Closure|string|\Illuminate\Contracts\Support\Arrayable|array|\Illuminate\Contracts\Database\Query\Expression  $column
      * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function whereNot(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection;
@@ -238,29 +263,9 @@ interface Servicable
     /**
      * Проверяет наличие записи в таблице по переданному условию.
      *
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @param  \Closure|string|\Illuminate\Contracts\Support\Arrayable|array|\Illuminate\Contracts\Database\Query\Expression  $column
      */
     public function hasWhere(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): bool;
-
-    /**
-     * Создает экземпляр модели, но не сохраняет ее в таблицу.
-     */
-    public function make(Arrayable|array $attributes = []): Model;
-
-    /**
-     * Создает экземпляр модели, только если она не существует в таблице.
-     */
-    public function makeIfNotExists(Arrayable|array $attributes = []): ?Model;
-
-    /**
-     * Создать группу моделей.
-     */
-    public function makeGroup(ArrayAccess|array $group, bool $ifNotExists = false): Collection;
-
-    /**
-     * Создать группу не существующих в таблице моделей.
-     */
-    public function makeGroupIfNotExists(ArrayAccess|array $group): Collection;
 
     /**
      * Создать модель и сохранить ее в таблицу.

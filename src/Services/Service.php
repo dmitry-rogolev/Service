@@ -135,6 +135,59 @@ abstract class Service implements Servicable
     }
 
     /**
+     * Создает экземпляр модели, но не сохраняет ее в таблицу.
+     */
+    public function make(Arrayable|array $attributes = []): Model
+    {
+        $attributes = $this->toArray($attributes);
+
+        return $this->model::make($attributes);
+    }
+
+    /**
+     * Создает экземпляр модели, только если она не существует в таблице.
+     */
+    public function makeIfNotExists(Arrayable|array $attributes = []): ?Model
+    {
+        return ! $this->hasWhere($attributes) ? $this->make($attributes) : null;
+    }
+
+    /**
+     * Создать группу экземпляров моделей.
+     *
+     * @param  \ArrayAccess|\Illuminate\Contracts\Support\Arrayable|array  $group Группа аттрибутов.
+     * @param  bool  $ifNotExists [false] Создавать модели, только если их не существует в таблице?
+     */
+    public function makeGroup(ArrayAccess|Arrayable|array $group, bool $ifNotExists = false): Collection
+    {
+        $group = $this->arrayableToArray($group);
+
+        $result = new Collection;
+
+        // Перебираем группу аттрибутов и создает экземпляры моделей.
+        // Если ifNotExists = true, создаем модели только если ее не существует в таблице.
+        foreach ($group as $attributes) {
+            $model = $ifNotExists ? $this->makeIfNotExists($attributes) : $this->make($attributes);
+
+            if (! is_null($model)) {
+                $result->push($model);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Создать группу экземпляров моделей.
+     *
+     * @param  \ArrayAccess|\Illuminate\Contracts\Support\Arrayable|array  $group Группа аттрибутов.
+     */
+    public function makeGroupIfNotExists(ArrayAccess|Arrayable|array $group): Collection
+    {
+        return $this->makeGroup($group, true);
+    }
+
+    /**
      * Возвращает коллекцию моделей по их идентификаторам.
      *
      * @param  \Illuminate\Contracts\Support\Arrayable|array|string|int  ...$id Идентификатор или коллекция идентификаторов.
@@ -222,32 +275,38 @@ abstract class Service implements Servicable
     /**
      * Возвращает коллекцию моделей по столбцу.
      *
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @param  \Closure|string|\Illuminate\Contracts\Support\Arrayable|array|\Illuminate\Contracts\Database\Query\Expression  $column
      * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function where(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection
     {
-        return $this->model::where(...func_get_args())->get();
+        $column = $this->arrayableToArray($column);
+
+        return $this->model::where($column, $operator, $value, $boolean)->get();
     }
 
     /**
      * Возвращает первую модель из коллекции, удовлетворяющую условию.
      *
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @param  \Closure|string|\Illuminate\Contracts\Support\Arrayable|array|\Illuminate\Contracts\Database\Query\Expression  $column
      */
     public function firstWhere(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): ?Model
     {
-        return $this->model::firstWhere(...func_get_args());
+        $column = $this->arrayableToArray($column);
+
+        return $this->model::firstWhere($column, $operator, $value, $boolean);
     }
 
     /**
      * Возвращает коллекцию, которая не удовлетворяет условию.
      *
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @param  \Closure|string|\Illuminate\Contracts\Support\Arrayable|array|\Illuminate\Contracts\Database\Query\Expression  $column
      * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function whereNot(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): Collection
     {
+        $column = $this->arrayableToArray($column);
+
         return $this->buildQueryWhereNot(...func_get_args())->get();
     }
 
@@ -543,55 +602,13 @@ abstract class Service implements Servicable
     /**
      * Проверяет наличие записи в таблице по переданному условию.
      *
-     * @param  \Closure|string|array|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @param  \Closure|string|\Illuminate\Contracts\Support\Arrayable|array|\Illuminate\Contracts\Database\Query\Expression  $column
      */
     public function hasWhere(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and'): bool
     {
-        return $this->model::where(...func_get_args())->exists();
-    }
+        $column = $this->arrayableToArray($column);
 
-    /**
-     * Создает экземпляр модели, но не сохраняет ее в таблицу.
-     */
-    public function make(Arrayable|array $attributes = []): Model
-    {
-        $attributes = $this->toArray($attributes);
-
-        return $this->model::make($attributes);
-    }
-
-    /**
-     * Создает экземпляр модели, только если она не существует в таблице.
-     */
-    public function makeIfNotExists(Arrayable|array $attributes = []): ?Model
-    {
-        $attributes = $this->toArray($attributes);
-
-        return ! $this->hasWhere($attributes) ? $this->make($attributes) : null;
-    }
-
-    /**
-     * Создать группу моделей.
-     */
-    public function makeGroup(ArrayAccess|array $group, bool $ifNotExists = false): Collection
-    {
-        $result = new Collection;
-
-        foreach ($group as $attributes) {
-            if (is_array($attributes) && ($model = $ifNotExists ? $this->makeIfNotExists($attributes) : $this->make($attributes))) {
-                $result->push($model);
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Создать группу не существующих в таблице моделей.
-     */
-    public function makeGroupIfNotExists(ArrayAccess|array $group): Collection
-    {
-        return $this->makeGroup($group, true);
+        return $this->model::where($column, $operator, $value, $boolean)->exists();
     }
 
     /**
@@ -843,6 +860,15 @@ abstract class Service implements Servicable
     protected function toArray(mixed $value): array
     {
         return $value instanceof Arrayable ? $value->toArray() : Arr::wrap($value);
+    }
+
+    /**
+     * Приводит переданное значение к массиву,
+     * если оно реализует интерфейс "Illuminate\Contracts\Support\Arrayable".
+     */
+    protected function arrayableToArray(mixed $value): mixed
+    {
+        return $value instanceof Arrayable ? $value->toArray() : $value;
     }
 
     /**
