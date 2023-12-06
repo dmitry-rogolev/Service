@@ -35,6 +35,18 @@ class User extends Model
     ];
 
     /**
+     * Возвращает столбцы, которые содержат уникальные данные.
+     *
+     * @return array<int, string>
+     */
+    public function uniqueKeys()
+    {
+        return [
+            'email',
+        ];
+    }
+
+    /**
      * Создайте новый экземпляр фабрики для модели.
      *
      * @return \dmitryrogolev\Service\Tests\Database\Factories\UserFactory<static>

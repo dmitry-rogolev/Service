@@ -38,8 +38,7 @@ abstract class Service implements Servicable
     protected string $factory;
 
     /**
-     * Список имен столбцов с уникальными значениями,
-     * которые можно использовать для идентификации.
+     * Столбцы таблицы, содержащие уникальные данные.
      *
      * @var array<int, string>
      */
@@ -56,9 +55,9 @@ abstract class Service implements Servicable
     /**
      * Изменяет имя модели сервиса.
      */
-    protected function setModel(string $model): static
+    protected function setModel(string $model = null): static
     {
-        if (class_exists($model) && is_a($model, Model::class, true)) {
+        if (! is_null($model) && class_exists($model) && is_a($model, Model::class, true)) {
             $this->model = $model;
         }
 
@@ -76,9 +75,9 @@ abstract class Service implements Servicable
     /**
      * Изменяет имя сидера модели.
      */
-    protected function setSeeder(string $seeder): static
+    protected function setSeeder(string $seeder = null): static
     {
-        if (class_exists($seeder) && is_a($seeder, Seeder::class, true)) {
+        if (! is_null($seeder) && class_exists($seeder) && is_a($seeder, Seeder::class, true)) {
             $this->seeder = $seeder;
         }
 
@@ -94,26 +93,45 @@ abstract class Service implements Servicable
     }
 
     /**
-     * Возвращает список имен столбцов с уникальными значениями,
-     * которые можно использовать для идентификации.
-     *
-     * @return array<int, string>
-     */
-    public function getUniqueKeys(): array
-    {
-        return isset($this->uniqueKeys) ? $this->uniqueKeys : [];
-    }
-
-    /**
      * Изменяет имя фабрики модели.
      */
-    protected function setFactory(string $factory): static
+    protected function setFactory(string $factory = null): static
     {
-        if (class_exists($factory) && is_a($factory, Factory::class, true)) {
+        if (! is_null($factory) && class_exists($factory) && is_a($factory, Factory::class, true)) {
             $this->factory = $factory;
         }
 
         return $this;
+    }
+
+    /**
+     * Столбцы таблицы, содержащие уникальные данные.
+     *
+     * @return array<int, string>
+     */
+    public function uniqueKeys(): array
+    {
+        // Если поле с уникальными столбцами пустое и у модели есть метод "uniqueKeys",
+        // получаем от него имена столбцов, содержащие уникальные данные в таблице.
+        if (empty($this->uniqueKeys) && method_exists($this->model, 'uniqueKeys')) {
+            $this->uniqueKeys = app($this->model)->uniqueKeys();
+        }
+
+        return $this->uniqueKeys;
+    }
+
+    /**
+     * Создает новый экземпляр сервиса работы с моделью.
+     *
+     * @param  string|null  $model Имя класса модели.
+     * @param  string|null  $seeder Имя класса сидера.
+     * @param  string|null  $factory Имя класса фабрики, генерирующий модель.
+     */
+    public function __construct(string $model = null, string $seeder = null, string $factory = null)
+    {
+        $this->setModel($model)
+            ->setSeeder($seeder)
+            ->setFactory($factory);
     }
 
     /**
@@ -158,13 +176,13 @@ abstract class Service implements Servicable
     {
         $values = $this->toFlattenArray($key);
 
-        // Заменяем модели на значения уникальных аттрибутов.
+        // Заменяем модели на значения уникальных столбцов.
         $values = $this->replaceModelsWithTheirUniqueKeys($values);
 
         // Строим запрос на получение записей по первичному ключу
         // или по другим уникальным столбцам.
         return tap($this->model::whereKey($values), function ($query) use ($values) {
-            foreach ($this->uniqueKeys as $key) {
+            foreach ($this->uniqueKeys() as $key) {
                 $query->orWhereIn($key, $values);
             }
         })->get();
@@ -180,15 +198,13 @@ abstract class Service implements Servicable
     {
         $values = $this->toFlattenArray($key);
 
-        // Заменяем модели на значения уникальных аттрибутов и отфильтровываем пустые значения.
-        $values = array_filter(
-            $this->replaceModelsWithTheirUniqueKeys($values)
-        );
+        // Заменяем модели на значения уникальных столбцов.
+        $values = $this->replaceModelsWithTheirUniqueKeys($values);
 
         // Строим запрос на получение записей, первичные ключи
         // или уникальные столбцы которых не содержатся в переданных ключах.
         return tap($this->model::whereKeyNot($values), function ($query) use ($values) {
-            foreach ($this->uniqueKeys as $key) {
+            foreach ($this->uniqueKeys() as $key) {
                 $query->whereNotIn($key, $values);
             }
         })->get();
@@ -203,13 +219,13 @@ abstract class Service implements Servicable
     {
         $values = $this->toFlattenArray($key);
 
-        // Заменяем модели на значения уникальных аттрибутов.
+        // Заменяем модели на значения уникальных столбцов.
         $values = $this->replaceModelsWithTheirUniqueKeys($values);
 
         // Строим запрос на получение записей по первичному ключу
         // или по другим уникальным столбцам.
         return tap($this->model::whereKey($values), function ($query) use ($values) {
-            foreach ($this->uniqueKeys as $key) {
+            foreach ($this->uniqueKeys() as $key) {
                 $query->orWhereIn($key, $values);
             }
         })->first();
@@ -305,14 +321,14 @@ abstract class Service implements Servicable
         }
 
         // Заменяем модели на их идентификаторы.
-        [$id] = $this->replaceModelsWithTheirIds($ids);
+        $ids = $this->replaceModelsWithTheirIds($ids);
 
         // Предотвращает выполнение запроса к БД при передачи null в метод find.
-        if (is_null($id)) {
+        if (empty($ids)) {
             return null;
         }
 
-        return $this->model::find($id);
+        return $this->model::find($ids[0]);
     }
 
     /**
@@ -350,14 +366,14 @@ abstract class Service implements Servicable
         }
 
         // Заменяем модели на их идентификаторы.
-        [$id] = $this->replaceModelsWithTheirIds($ids);
+        $ids = $this->replaceModelsWithTheirIds($ids);
 
         // Предотвращает выполнение запроса к БД при передачи null в метод findOrFail.
-        if (is_null($id)) {
-            throw (new ModelNotFoundException)->setModel($this->model, $id);
+        if (empty($ids)) {
+            throw (new ModelNotFoundException)->setModel($this->model, $ids);
         }
 
-        return $this->model::findOrFail($id);
+        return $this->model::findOrFail($ids[0]);
     }
 
     /**
@@ -403,14 +419,14 @@ abstract class Service implements Servicable
         $ids = $this->toFlattenArray($id);
 
         // Заменяем модели на их идентификаторы.
-        [$id] = $this->replaceModelsWithTheirIds($ids);
+        $ids = $this->replaceModelsWithTheirIds($ids);
 
         // Предотвращает выполнение запроса к БД при передачи null в метод findOrNew.
-        if (is_null($id)) {
+        if (empty($ids)) {
             return $this->model::newModelInstance();
         }
 
-        return $this->model::findOrNew($id);
+        return $this->model::findOrNew($ids[0]);
     }
 
     /**
@@ -424,14 +440,14 @@ abstract class Service implements Servicable
         $ids = $this->toFlattenArray($id);
 
         // Заменяем модели на их идентификаторы.
-        [$id] = $this->replaceModelsWithTheirIds($ids);
+        $ids = $this->replaceModelsWithTheirIds($ids);
 
         // Предотвращает выполнение запроса к БД при передачи null в метод findOr.
-        if (is_null($id)) {
+        if (empty($ids)) {
             return $callback();
         }
 
-        return $this->model::findOr($id, $callback);
+        return $this->model::findOr($ids[0], $callback);
     }
 
     /**
@@ -525,29 +541,28 @@ abstract class Service implements Servicable
     }
 
     /**
-     * Проверяет наличие всех моделей в таблице по их идентификаторам.
+     * Проверяет наличие всех моделей в таблице по их идентификаторам или уникальным столбцам.
      *
-     * @param  mixed  $id
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$id Идентификатор(-ы) или уникальный(-е) ключ(-и).
      */
-    public function hasAll(...$id): bool
+    public function hasAll(mixed ...$id): bool
     {
-        $ids = Arr::flatten($id);
+        $ids = array_unique(
+            $this->toFlattenArray($id)
+        );
 
-        foreach ($ids as $id) {
-            if (! $this->find($id)) {
-                return false;
-            }
-        }
+        $result = $this->whereUniqueKey($ids);
 
-        return true;
+        return $result->count() === count($ids);
     }
 
     /**
-     * Проверяет наличие модели в таблице по ее идентификатору.
+     * Проверяет наличие модели в таблице по ее идентификатору или уникальному столбцу.
      *
-     * @param  mixed  $id
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  $id Идентификатор(-ы) или уникальный(-е) ключ(-и).
+     * @param  bool  $all [false] Проверять наличие всех моделей из переданных идентификаторов?
      */
-    public function has($id, bool $all = false): bool
+    public function has(mixed $id, bool $all = false): bool
     {
         return $all ? $this->hasAll($id) : $this->hasOne($id);
     }
@@ -810,9 +825,11 @@ abstract class Service implements Servicable
      */
     protected function replaceModelsWithTheirIds(array $models): array
     {
+        // Заменяем модели на их первичные ключи.
         $result = array_map(fn ($item) => $item instanceof Model ? $item->getKey() : $item, $models);
 
-        return array_values($result);
+        // Удаляем пустые и повторяющиеся значения.
+        return array_unique(array_filter(array_values($result)));
     }
 
     /**
@@ -820,24 +837,32 @@ abstract class Service implements Servicable
      *
      * @return array<int, mixed>
      */
-    protected function replaceModelsWithTheirUniqueKeys(array $models): array
+    protected function replaceModelsWithTheirUniqueKeys(array $ids): array
     {
-        $result = [];
+        $keys = [];
 
-        foreach ($models as $model) {
-            if ($model instanceof Model) {
-                $keys = [$model->getKey()];
+        // Перебираем переданные идентификаторы и заменяем все модели
+        // на их идентификаторы и уникальные ключи.
+        foreach ($ids as $id) {
 
-                foreach ($this->uniqueKeys as $key) {
-                    $keys[] = $model->getAttribute($key);
+            // Если переданный идентификатор является моделью,
+            // заменяем ее на первичный ключ этой модели, а также на значения уникальных столбцов.
+            if ($id instanceof Model) {
+                $keys[] = $id->getKey();
+
+                foreach ($this->uniqueKeys() as $key) {
+                    $keys[] = $id->getAttribute($key);
                 }
+            }
 
-                $result[] = $keys;
-            } else {
-                $result[] = $model;
+            // Если переданный идентификатор не является моделью,
+            // добавляем его в результирующий список без изменения.
+            else {
+                $keys[] = $id;
             }
         }
 
-        return Arr::flatten($result);
+        // Удаляем пустые и повторяющиеся значения.
+        return array_unique(array_filter($keys));
     }
 }

@@ -30,12 +30,11 @@ interface Servicable
     public function getFactory(): string;
 
     /**
-     * Возвращает список имен столбцов с уникальными значениями,
-     * которые можно использовать для идентификации.
+     * Столбцы таблицы, содержащие уникальные данные.
      *
      * @return array<int, string>
      */
-    public function getUniqueKeys(): array;
+    public function uniqueKeys(): array;
 
     /**
      * Возвращает коллекцию моделей по их идентификаторам.
@@ -221,18 +220,19 @@ interface Servicable
     public function hasOne(mixed ...$id): bool;
 
     /**
-     * Проверяет наличие всех моделей в таблице по их идентификаторам.
+     * Проверяет наличие всех моделей в таблице по их идентификаторам или уникальным столбцам.
      *
-     * @param  mixed  $id
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$id Идентификатор(-ы) или уникальный(-е) ключ(-и).
      */
-    public function hasAll(...$id): bool;
+    public function hasAll(mixed ...$id): bool;
 
     /**
-     * Проверяет наличие модели в таблице по ее идентификатору.
+     * Проверяет наличие модели в таблице по ее идентификатору или уникальному столбцу.
      *
-     * @param  mixed  $id
+     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  $id Идентификатор(-ы) или уникальный(-е) ключ(-и).
+     * @param  bool  $all [false] Проверять наличие всех моделей из переданных идентификаторов?
      */
-    public function has($id, bool $all = false): bool;
+    public function has(mixed $id, bool $all = false): bool;
 
     /**
      * Создать экземпляр модели, но не сохранять ее в таблицу.

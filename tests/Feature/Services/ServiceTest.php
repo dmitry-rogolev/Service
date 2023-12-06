@@ -48,10 +48,10 @@ class ServiceTest extends TestCase
      * Есть ли метод, возвращающий список имен столбцов с уникальными значениями,
      * которые можно использовать для идентификации?
      */
-    public function test_get_unique_keys(): void
+    public function test_unique_keys(): void
     {
-        $this->assertIsArray(Service::getUniqueKeys());
-        $this->assertNotEmpty(Service::getUniqueKeys());
+        $this->assertIsArray(Service::uniqueKeys());
+        $this->assertNotEmpty(Service::uniqueKeys());
     }
 
     /**
@@ -2252,7 +2252,7 @@ class ServiceTest extends TestCase
         // ! ||--------------------------------------------------------------------------------||
 
         $id = $user->getKey();
-        $condition = Service::hasOne($id);
+        $condition = Service::has($id);
         $this->assertTrue($condition);
 
         // ! ||--------------------------------------------------------------------------------||
@@ -2277,7 +2277,7 @@ class ServiceTest extends TestCase
         // ! ||--------------------------------------------------------------------------------||
 
         $id = $this->generate(User::class, ['email' => $user->email], false);
-        $condition = Service::hasOne($id);
+        $condition = Service::has($id);
         $this->assertTrue($condition);
 
         // ! ||--------------------------------------------------------------------------------||
@@ -2293,7 +2293,7 @@ class ServiceTest extends TestCase
         // ! ||--------------------------------------------------------------------------------||
 
         $id = $this->generate(User::class, false);
-        $condition = Service::hasOne($id);
+        $condition = Service::has($id);
         $this->assertFalse($condition);
 
         // ! ||--------------------------------------------------------------------------------||
@@ -2318,7 +2318,7 @@ class ServiceTest extends TestCase
         // ! ||--------------------------------------------------------------------------------||
 
         $ids = $users->pluck('id')->all();
-        $condition = Service::hasOne($ids);
+        $condition = Service::hasOne(...$ids);
         $this->assertIsBool($condition);
 
         // ! ||--------------------------------------------------------------------------------||
@@ -2326,7 +2326,7 @@ class ServiceTest extends TestCase
         // ! ||--------------------------------------------------------------------------------||
 
         $ids = $users->pluck('id')->all();
-        $condition = Service::hasOne($ids);
+        $condition = Service::has($ids);
         $this->assertTrue($condition);
 
         // ! ||--------------------------------------------------------------------------------||
@@ -2342,7 +2342,7 @@ class ServiceTest extends TestCase
         // ! ||--------------------------------------------------------------------------------||
 
         $ids = $users->collect();
-        $condition = Service::hasOne($ids);
+        $condition = Service::has($ids);
         $this->assertTrue($condition);
 
         // ! ||--------------------------------------------------------------------------------||
@@ -2362,7 +2362,7 @@ class ServiceTest extends TestCase
         // ! ||--------------------------------------------------------------------------------||
 
         $ids = ['key', 36485, null];
-        $condition = Service::hasOne($ids);
+        $condition = Service::has($ids);
         $this->assertFalse($condition);
 
         // ! ||--------------------------------------------------------------------------------||
@@ -2375,194 +2375,74 @@ class ServiceTest extends TestCase
         $this->assertQueryExecutedCount(1);
     }
 
-    // /**
-    //  * Есть ли метод, проверяющий наличие модели в таблице по ее столбцу?
-    //  */
-    // public function test_has_one_model_column(): void
-    // {
-    //     $user = $this->generateUser();
+    /**
+     * Есть ли метод, проверяющий наличие всех моделей в таблице по идентификатору или по уникальному ключу?
+     */
+    public function test_has_all(): void
+    {
+        $users = $this->generate(User::class, 3);
 
-    //     // Передаем электронную почту.
-    //     $this->assertTrue(Service::hasOne($user->email, 'email'));
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                   Подтверждаем возврат логического значения.                   ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Передаем массив.
-    //     $this->assertTrue(Service::hasOne([
-    //         'email' => $user->email,
-    //     ]));
+        $ids = $users->pluck('id')->all();
+        $condition = Service::hasAll(...$ids);
+        $this->assertIsBool($condition);
 
-    //     // Передаем модель.
-    //     $this->assertTrue(Service::hasOne($user, 'name'));
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                        Передаем массив идентификаторов.                        ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Передаем отсутствующие данные.
-    //     $this->assertFalse(Service::hasOne('email@email.com', 'email'));
+        $ids = $users->pluck('id')->all();
+        $condition = Service::has($ids, true);
+        $this->assertTrue($condition);
 
-    //     // Передаем отсутствующую в таблице модель.
-    //     $this->assertFalse(Service::hasOne(User::factory()->make(), 'name'));
-    // }
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Передаем коллекцию уникальных ключей.                     ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    // /**
-    //  * Есть ли метод, проверяющий наличие хотябы одной модели из переданных идентификаторов?
-    //  */
-    // public function test_has_one_collection(): void
-    // {
-    //     $users = $this->generateUser(3);
+        $ids = $users->pluck('email');
+        $condition = Service::hasAll($ids);
+        $this->assertTrue($condition);
 
-    //     // Передаем массив идентификаторов.
-    //     $ids = $users->pluck('id')->all();
-    //     $this->assertTrue(Service::hasOne($ids));
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                           Передаем коллекцию моделей.                          ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Передаем массив моделей.
-    //     $ids = $users->all();
-    //     $this->assertTrue(Service::hasOne($ids));
+        $ids = $users->collect();
+        $condition = Service::has($ids, true);
+        $this->assertTrue($condition);
 
-    //     // Передаем коллекцию идентификаторов.
-    //     $ids = $users->pluck('id');
-    //     $this->assertTrue(Service::hasOne($ids));
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                           Передаем смешанные данные.                           ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Передаем коллекцию моделей.
-    //     $ids = $users->collect();
-    //     $this->assertTrue(Service::hasOne($ids));
+        $ids = [
+            $users->get(1)->email,
+            $users->first(),
+            $users->get(2)->getKey(),
+        ];
+        $condition = Service::hasAll($ids);
+        $this->assertTrue($condition);
 
-    //     // Передаем массив случайных значений.
-    //     $this->assertFalse(Service::hasOne(['key', 4564646, null]));
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Передаем отсутствующие в таблице ключи.                    ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Передаем массив моделей идентификаторов со случайными значениями.
-    //     $ids = $users->pluck('id')->concat(['key', 4564646, null])->all();
-    //     $this->assertTrue(Service::hasOne($ids));
-    // }
+        $ids = ['key', 36485, $users->first()];
+        $condition = Service::has($ids, true);
+        $this->assertFalse($condition);
 
-    // /**
-    //  * Есть ли метод, проверяющий наличие модели в таблице по ее идентификатору?
-    //  */
-    // public function test_has_all_model(): void
-    // {
-    //     $user = $this->generateUser();
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||               Подтверждаем количество выполненных запросов к БД.               ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Передаем идентификатор.
-    //     $this->assertTrue(Service::hasAll($user->getKey()));
-
-    //     // Передаем модель.
-    //     $this->assertTrue(Service::hasAll($user));
-
-    //     // Передаем случайное значение.
-    //     $this->assertFalse(Service::hasAll(364939));
-
-    //     // Передаем модель, которая отсутствует в таблице.
-    //     $this->assertFalse(Service::hasAll(User::factory()->make()));
-    // }
-
-    // /**
-    //  * Есть ли метод, проверяющий наличие всех моделей из переданных идентификаторов?
-    //  */
-    // public function test_has_all_collection(): void
-    // {
-    //     $users = $this->generateUser(3);
-
-    //     // Передаем массив идентификаторов.
-    //     $ids = $users->pluck('id')->all();
-    //     $this->assertTrue(Service::hasAll($ids));
-
-    //     // Передаем массив моделей.
-    //     $ids = $users->all();
-    //     $this->assertTrue(Service::hasAll(...$ids));
-
-    //     // Передаем коллекцию идентификаторов.
-    //     $ids = $users->pluck('id');
-    //     $this->assertTrue(Service::hasAll($ids));
-
-    //     // Передаем коллекцию моделей.
-    //     $ids = $users->collect();
-    //     $this->assertTrue(Service::hasAll($ids));
-
-    //     // Передаем массив случайных значений.
-    //     $this->assertFalse(Service::hasAll('key', 4564646, null));
-
-    //     // Передаем массив моделей идентификаторов со случайными значениями.
-    //     $ids = $users->pluck('id')->concat(['key', 4564646, null])->all();
-    //     $this->assertFalse(Service::hasAll($ids));
-    // }
-
-    // /**
-    //  * Есть ли метод, проверяющий наличие модели в таблице?
-    //  */
-    // public function test_has_model(): void
-    // {
-    //     $user = $this->generateUser();
-
-    //     // Передаем идентификатор.
-    //     $this->assertTrue(Service::has($user->getKey()));
-
-    //     // Передаем модель.
-    //     $this->assertTrue(Service::has($user));
-
-    //     // Передаем случайное значение.
-    //     $this->assertFalse(Service::has(364939));
-
-    //     // Передаем модель, которая отсутствует в таблице.
-    //     $this->assertFalse(Service::has(User::factory()->make()));
-    // }
-
-    // /**
-    //  * Есть ли метод, проверяющий наличие хотябы одной модели из коллекции моделей в таблице?
-    //  */
-    // public function test_has_collection_one(): void
-    // {
-    //     $users = $this->generateUser(3);
-
-    //     // Передаем массив идентификаторов.
-    //     $ids = $users->pluck('id')->all();
-    //     $this->assertTrue(Service::has($ids));
-
-    //     // Передаем массив моделей.
-    //     $ids = $users->all();
-    //     $this->assertTrue(Service::has($ids));
-
-    //     // Передаем коллекцию идентификаторов.
-    //     $ids = $users->pluck('id');
-    //     $this->assertTrue(Service::has($ids));
-
-    //     // Передаем коллекцию моделей.
-    //     $ids = $users->collect();
-    //     $this->assertTrue(Service::has($ids));
-
-    //     // Передаем массив случайных значений.
-    //     $this->assertFalse(Service::has(['key', 4564646, null]));
-
-    //     // Передаем массив моделей идентификаторов со случайными значениями.
-    //     $ids = $users->pluck('id')->concat(['key', 4564646, null])->all();
-    //     $this->assertTrue(Service::has($ids));
-    // }
-
-    // /**
-    //  * Есть ли метод, проверяющий наличие всех моделей из переданных идентификаторов?
-    //  */
-    // public function test_has_collection_all(): void
-    // {
-    //     $users = $this->generateUser(3);
-
-    //     // Передаем массив идентификаторов.
-    //     $ids = $users->pluck('id')->all();
-    //     $this->assertTrue(Service::has($ids, true));
-
-    //     // Передаем массив моделей.
-    //     $ids = $users->all();
-    //     $this->assertTrue(Service::has($ids, true));
-
-    //     // Передаем коллекцию идентификаторов.
-    //     $ids = $users->pluck('id');
-    //     $this->assertTrue(Service::has($ids, true));
-
-    //     // Передаем коллекцию моделей.
-    //     $ids = $users->collect();
-    //     $this->assertTrue(Service::has($ids, true));
-
-    //     // Передаем массив случайных значений.
-    //     $this->assertFalse(Service::has(['key', 4564646, null], true));
-
-    //     // Передаем массив моделей идентификаторов со случайными значениями.
-    //     $ids = $users->pluck('id')->concat(['key', 4564646, null])->all();
-    //     $this->assertFalse(Service::has($ids, true));
-    // }
+        $ids = $users->pluck('id')->all();
+        $this->resetQueryExecutedCount();
+        Service::hasAll($ids);
+        $this->assertQueryExecutedCount(1);
+    }
 
     // /**
     //  * Есть ли метод, создающий экземпляр модели, но не сохраняющий ее в таблицу?
@@ -2854,14 +2734,9 @@ class ServiceTest extends TestCase
 
 class ItemService extends \dmitryrogolev\Services\Service
 {
-    protected array $uniqueKeys = [
-        'email',
-    ];
-
     public function __construct()
     {
-        $this->setModel(User::class);
-        $this->setSeeder(UserSeeder::class);
+        parent::__construct(User::class, UserSeeder::class);
     }
 }
 
