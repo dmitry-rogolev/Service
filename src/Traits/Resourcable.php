@@ -65,8 +65,12 @@ trait Resourcable
     /**
      * Восстанавливает программно удаленную модель.
      */
-    public function restore(string|int $id): Model
+    public function restore(Model|string|int $id): Model
     {
+        if ($id instanceof Model) {
+            $id = $id->getKey();
+        }
+
         return tap($this->model::onlyTrashed()->find($id), function ($model) {
             $model->restore();
         });
