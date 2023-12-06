@@ -675,13 +675,15 @@ abstract class Service implements Servicable
     }
 
     /**
-     * Возвращает фабрику модели.
+     * Возвращает экземпляр фабрики модели.
      *
-     * @param  \Closure|array|int|null  $count
-     * @param  \Closure|array|null  $state
+     * @param  \Closure|\Illuminate\Contracts\Support\Arrayable|array|int|null  $count Количество моделей, которое необходимо создать.
+     * @param  \Closure|\Illuminate\Contracts\Support\Arrayable|array|null  $state Аттрибуты, которые необходимо передать модели в конструктор.
      */
-    public function factory($count = null, $state = []): Factory
+    public function factory(mixed $count = null, mixed $state = []): Factory
     {
+        [$count, $state] = $this->arrayableParamsToArray([$count, $state]);
+
         return $this->model::factory($count, $state);
     }
 
@@ -860,6 +862,17 @@ abstract class Service implements Servicable
     protected function arrayableToArray(mixed $value): mixed
     {
         return $value instanceof Arrayable ? $value->toArray() : $value;
+    }
+
+    /**
+     * Перебирает переданные параметры и приводит к массиву все классы,
+     * реализующие интерфейс "Illuminate\Contracts\Support\Arrayable".
+     *
+     * @return array<int, mixed>
+     */
+    protected function arrayableParamsToArray(array $params): array
+    {
+        return array_map(fn ($item) => $this->arrayableToArray($item), $params);
     }
 
     /**

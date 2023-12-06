@@ -2693,15 +2693,73 @@ class ServiceTest extends TestCase
         $this->assertQueryExecutedCount(count($group));
     }
 
-    // /**
-    //  * Есть ли метод, возвращающий фабрику модели?
-    //  *
-    //  * @return void
-    //  */
-    // public function test_factory(): void
-    // {
-    //     $this->assertInstanceOf(Service::getFactory(), Service::factory());
-    // }
+    /**
+     * Есть ли метод, возвращающий фабрику модели?
+     */
+    public function test_factory(): void
+    {
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                Подтверждаем возврат методом экземпляра фабрики.                ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $factory = Service::factory();
+        $this->assertInstanceOf(Service::getFactory(), $factory);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||           Подтверждаем возможность создания модели с помощью фабрики.          ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $factory = Service::factory();
+        $model = $factory->create();
+        $this->assertModelExists($model);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                    Передаем количество создаваемых моделей.                    ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $count = 3;
+        $factory = Service::factory($count);
+        $models = $factory->create();
+        $this->assertCount($count, $models);
+        $models->each(fn ($item) => $this->assertModelExists($item));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                       Передаем массив аттрибутов модели.                       ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $state = [
+            'email' => fake()->unique()->email(),
+        ];
+        $factory = Service::factory($state);
+        $model = $factory->create();
+        $this->assertModelExists($model);
+        $this->assertEquals($state, $model->only(['email']));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Передаем коллекцию аттрибутов модели.                     ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $state = collect([
+            'email' => fake()->unique()->email(),
+        ]);
+        $factory = Service::factory($state);
+        $model = $factory->create();
+        $this->assertModelExists($model);
+        $this->assertEquals($state->all(), $model->only(['email']));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||           Передаем количество создаваемых моделей и аттрибуты модели.          ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $count = 3;
+        $state = [
+            'name' => fake()->name(),
+        ];
+        $factory = Service::factory($count, $state);
+        $models = $factory->create();
+        $models->each(fn ($item) => $this->assertModelExists($item));
+        $models->each(fn ($item) => $this->assertEquals($state, $item->only(['name'])));
+    }
 
     // /**
     //  * Есть ли метод, генерирующий модели с помощью фабрики?
