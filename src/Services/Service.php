@@ -690,13 +690,17 @@ abstract class Service implements Servicable
     /**
      * Генерирует модели с помощью фабрики.
      *
-     * @param  \Closure|array|int|bool|null  $attributes
-     * @param  \Closure|int|bool|null  $count
+     * @param  \Closure|\Illuminate\Contracts\Support\Arrayable|array|bool|null  $attributes Аттрибуты, которые необходимо передать модели в конструктор.
+     * @param  int|bool|null  $count Количество моделей, которое необходимо создать.
+     * @param  bool  $create [true] Сохранить ли созданный экземпляр модели в таблице?
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>|\Illuminate\Database\Eloquent\Model
      */
-    public function generate($attributes = [], $count = null, bool $create = true): Model|Collection
+    public function generate(mixed $attributes = [], int|bool $count = null, bool $create = true): Model|Collection
     {
-        $attributes = value($attributes);
-        $count = value($count);
+        if (is_bool($count)) {
+            $create = $count;
+            $count = null;
+        }
 
         if (is_int($attributes)) {
             $count = $attributes;
@@ -708,14 +712,9 @@ abstract class Service implements Servicable
             $attributes = [];
         }
 
-        if (is_bool($count)) {
-            $create = $count;
-            $count = null;
-        }
+        $factory = $this->factory($count, $attributes);
 
-        $factory = $this->factory($count);
-
-        return $create ? $factory->create($attributes) : $factory->make($attributes);
+        return $create ? $factory->create() : $factory->make();
     }
 
     /**

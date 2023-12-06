@@ -2761,39 +2761,119 @@ class ServiceTest extends TestCase
         $models->each(fn ($item) => $this->assertEquals($state, $item->only(['name'])));
     }
 
-    // /**
-    //  * Есть ли метод, генерирующий модели с помощью фабрики?
-    //  *
-    //  * @return void
-    //  */
-    // public function test_generate(): void
-    // {
-    //     // Создаем модель со случайными данными.
-    //     $this->assertModelExists(Service::generate());
+    /**
+     * Есть ли метод, генерирующий модели с помощью фабрики?
+     */
+    public function test_generate(): void
+    {
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Подтверждаем возврат методом модели.                      ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Создаем модель с указанными аттрибутами.
-    //     $user = Service::generate(['slug' => 'admin']);
-    //     $this->assertEquals('admin', $user->getSlug());
-    //     $this->assertModelExists($user);
+        $model = Service::generate();
+        $this->assertInstanceOf(Model::class, $model);
 
-    //     // Создаем сразу несколько моделей.
-    //     $users = Service::generate(3);
-    //     $this->assertCount(3, $users);
-    //     $this->assertModelExists($users->first());
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Подтверждаем возврат методом коллекции.                    ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Создаем модель, но не сохраняем ее в таблицу.
-    //     $this->assertModelMissing(Service::generate(false));
+        $count = 3;
+        $models = Service::generate($count);
+        $this->assertInstanceOf(Collection::class, $models);
 
-    //     // Создаем сразу несколько моделей с указанными аттрибутами.
-    //     $users = Service::generate(['description' => 'Role'], 3);
-    //     $this->assertCount(3, $users);
-    //     $this->assertTrue($users->every(fn ($item) => $item->description === 'Role' && $item->exists));
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                   Создаем модель со сгенерированными данными.                  ||
+        // ! ||--------------------------------------------------------------------------------||
 
-    //     // Создаем сразу несколько моделей с указанными аттрибутами, но не сохраняем их в таблице.
-    //     $users = Service::generate(['description' => 'Role'], 3, false);
-    //     $this->assertCount(3, $users);
-    //     $this->assertTrue($users->every(fn ($item) => $item->description === 'Role' && ! $item->exists));
-    // }
+        $model = Service::generate();
+        $this->assertModelExists($model);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                       Передаем массив аттрибутов модели.                       ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = [
+            'email' => fake()->unique()->email(),
+        ];
+        $model = Service::generate($attributes);
+        $this->assertModelExists($model);
+        $this->assertEquals($attributes, $model->only(['email']));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                      Передаем коллекцию аттрибутов модели.                     ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = collect([
+            'email' => fake()->unique()->email(),
+        ]);
+        $model = Service::generate($attributes);
+        $this->assertModelExists($model);
+        $this->assertEquals($attributes->all(), $model->only(['email']));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                    Передаем количество создаваемых моделей.                    ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $count = 3;
+        $models = Service::generate($count);
+        $this->assertCount($count, $models);
+        $models->each(fn ($item) => $this->assertModelExists($item));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                Передаем флаг создания только экземпляра модели.                ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $create = false;
+        $model = Service::generate($create);
+        $this->assertModelMissing($model);
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                     Передаем количество создаваемых моделей                    ||
+        // ! ||                    и флаг создания только экземпляра модели.                   ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $count = 3;
+        $create = false;
+        $models = Service::generate($count, $create);
+        $this->assertCount($count, $models);
+        $models->each(fn ($item) => $this->assertModelMissing($item));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                        Передаем массив аттрибутов модели                       ||
+        // ! ||                    и флаг создания только экземпляра модели.                   ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = collect([
+            'email' => fake()->unique()->email(),
+        ]);
+        $create = false;
+        $model = Service::generate($attributes, $create);
+        $this->assertModelMissing($model);
+        $this->assertEquals($attributes->all(), $model->only(['email']));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||                        Передаем массив аттрибутов модели                       ||
+        // ! ||                        и количество создаваемых моделей.                       ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $attributes = collect([
+            'name' => fake()->name(),
+        ]);
+        $count = 3;
+        $models = Service::generate($attributes, $count);
+        $this->assertCount($count, $models);
+        $models->each(fn ($item) => $this->assertModelExists($item));
+        $models->each(fn ($item) => $this->assertEquals($attributes->all(), $item->only(['name'])));
+
+        // ! ||--------------------------------------------------------------------------------||
+        // ! ||               Подтверждаем количество выполненных запросов к БД.               ||
+        // ! ||--------------------------------------------------------------------------------||
+
+        $this->resetQueryExecutedCount();
+        $count = 3;
+        Service::generate($count);
+        $this->assertQueryExecutedCount($count);
+    }
 
     // /**
     //  * Есть ли метод, обновляющий роль?
