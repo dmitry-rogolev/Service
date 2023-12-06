@@ -52,6 +52,7 @@ interface Servicable
      *
      * @param  \ArrayAccess|\Illuminate\Contracts\Support\Arrayable|array  $group Группа аттрибутов.
      * @param  bool  $ifNotExists [false] Создавать модели, только если их не существует в таблице?
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function makeGroup(ArrayAccess|Arrayable|array $group, bool $ifNotExists = false): Collection;
 
@@ -59,6 +60,7 @@ interface Servicable
      * Создать группу экземпляров моделей.
      *
      * @param  \ArrayAccess|\Illuminate\Contracts\Support\Arrayable|array  $group Группа аттрибутов.
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function makeGroupIfNotExists(ArrayAccess|Arrayable|array $group): Collection;
 
@@ -229,7 +231,9 @@ interface Servicable
     public function query(): Builder;
 
     /**
-     * Возвращает все модели.
+     * Возвращает все модели из таблицы.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function all(): Collection;
 
@@ -269,43 +273,34 @@ interface Servicable
 
     /**
      * Создать модель и сохранить ее в таблицу.
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|array  $attributes Аттрибуты, доступные к массовому присвоению.
      */
-    public function store(array $attributes = []): Model;
+    public function create(Arrayable|array $attributes = []): Model;
 
     /**
-     * Создать модель и сохранить ее в таблицу.
+     * Создать модель, только если ее не существует в таблице.
+     *
+     * @param  \Illuminate\Contracts\Support\Arrayable|array  $attributes Аттрибуты, доступные к массовому присвоению.
      */
-    public function create(array $attributes = []): Model;
-
-    /**
-     * Создать модель и сохранить ее в таблицу, если ее не существует.
-     */
-    public function storeIfNotExists(array $attributes = []): ?Model;
-
-    /**
-     * Создать модель и сохранить ее в таблицу, если ее не существует.
-     */
-    public function createIfNotExists(array $attributes = []): ?Model;
+    public function createIfNotExists(Arrayable|array $attributes = []): ?Model;
 
     /**
      * Создать группу моделей и сохранить ее в таблицу.
+     *
+     * @param  \ArrayAccess|\Illuminate\Contracts\Support\Arrayable|array  $group Группа аттрибутов.
+     * @param  bool  $ifNotExists [false] Создавать модели, только если их не существует в таблице?
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
-    public function storeGroup(ArrayAccess|array $group, bool $ifNotExists = false): Collection;
+    public function createGroup(ArrayAccess|Arrayable|array $group, bool $ifNotExists = false): Collection;
 
     /**
-     * Создать группу моделей и сохранить ее в таблицу.
+     * Создает группу не существующих в таблице моделей.
+     *
+     * @param  \ArrayAccess|\Illuminate\Contracts\Support\Arrayable|array  $group Группа аттрибутов.
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
-    public function createGroup(ArrayAccess|array $group, bool $ifNotExists = false): Collection;
-
-    /**
-     * Создать группу не существующих моделей и сохранить ее в таблицу.
-     */
-    public function storeGroupIfNotExists(ArrayAccess|array $group): Collection;
-
-    /**
-     * Создать группу не существующих моделей и сохранить ее в таблицу.
-     */
-    public function createGroupIfNotExists(ArrayAccess|array $group): Collection;
+    public function createGroupIfNotExists(ArrayAccess|Arrayable|array $group): Collection;
 
     /**
      * Возвращает фабрику модели.
