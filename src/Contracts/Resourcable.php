@@ -39,7 +39,7 @@ interface Resourcable
     /**
      * Восстанавливает программно удаленную модель.
      */
-    public function restore(string|int $model): Model;
+    public function restore(string|int $id): Model;
 
     /**
      * Удаляет модель из таблицы.

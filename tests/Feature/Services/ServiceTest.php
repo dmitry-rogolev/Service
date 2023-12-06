@@ -4,6 +4,7 @@ namespace dmitryrogolev\Service\Tests\Feature\Services;
 
 use dmitryrogolev\Service\Tests\Database\Factories\UserFactory;
 use dmitryrogolev\Service\Tests\Database\Seeders\UserSeeder;
+use dmitryrogolev\Service\Tests\Facades\Service;
 use dmitryrogolev\Service\Tests\Models\User;
 use dmitryrogolev\Service\Tests\RefreshDatabase;
 use dmitryrogolev\Service\Tests\TestCase;
@@ -11,7 +12,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\Facade;
 
 /**
  * Тестируем сервис работы с таблицей ролей.
@@ -2910,21 +2910,5 @@ class ServiceTest extends TestCase
         $this->assertCount(0, Service::all());
         Service::seed();
         $this->assertNotCount(0, Service::all());
-    }
-}
-
-class ItemService extends \dmitryrogolev\Services\Service
-{
-    public function __construct()
-    {
-        parent::__construct(User::class, UserSeeder::class);
-    }
-}
-
-class Service extends Facade
-{
-    protected static function getFacadeAccessor()
-    {
-        return ItemService::class;
     }
 }

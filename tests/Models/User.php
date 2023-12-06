@@ -5,6 +5,7 @@ namespace dmitryrogolev\Service\Tests\Models;
 use dmitryrogolev\Service\Tests\Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Model;
 
 /**
@@ -12,7 +13,9 @@ use Illuminate\Foundation\Auth\User as Model;
  */
 class User extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory;
+    use HasUuids;
+    use SoftDeletes;
 
     /**
      * Таблица БД, ассоциированная с моделью.
