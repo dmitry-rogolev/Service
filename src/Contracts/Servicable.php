@@ -39,7 +39,7 @@ interface Servicable
     /**
      * Возвращает коллекцию моделей по их идентификаторам.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$id Идентификатор или коллекция идентификаторов.
+     * @param  \Illuminate\Contracts\Support\Arrayable|array|string|int  ...$id Идентификатор или коллекция идентификаторов.
      * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function whereKey(mixed ...$id): Collection;
@@ -47,7 +47,7 @@ interface Servicable
     /**
      * Возвращает коллекцию всех моделей, за исключением тех, которые имеют переданные идентификаторы.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$id Идентификатор или коллекция идентификаторов.
+     * @param  \Illuminate\Contracts\Support\Arrayable|array|string|int  ...$id Идентификатор или коллекция идентификаторов.
      * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function whereKeyNot(mixed ...$id): Collection;
@@ -55,25 +55,25 @@ interface Servicable
     /**
      * Возвращает коллекцию моделей по ее уникальному ключу.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$key Ключ или коллекция уникальных ключей.
+     * @param  \Illuminate\Contracts\Support\Arrayable|array|string|int  ...$id Идентификатор(-ы) или уникальный(-е) столбец(-цы).
      * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
-    public function whereUniqueKey(mixed ...$key): Collection;
+    public function whereUniqueKey(mixed ...$id): Collection;
 
     /**
      * Возвращает все записи, за исключением тех, которые содержат переданные уникальные ключи.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$key Ключ или коллекция уникальных ключей.
+     * @param  \Illuminate\Contracts\Support\Arrayable|array|string|int  ...$id Идентификатор(-ы) или уникальный(-е) столбец(-цы).
      * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
-    public function whereUniqueKeyNot(mixed ...$key): Collection;
+    public function whereUniqueKeyNot(mixed ...$id): Collection;
 
     /**
      * Возвращает первую модель, имеющую переданный уникальный ключ.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$key Ключ или коллекция уникальных ключей.
+     * @param  \Illuminate\Contracts\Support\Arrayable|array|string|int  ...$id Идентификатор(-ы) или уникальный(-е) столбец(-цы).
      */
-    public function firstWhereUniqueKey(mixed ...$key): ?Model;
+    public function firstWhereUniqueKey(mixed ...$id): ?Model;
 
     /**
      * Возвращает коллекцию моделей по столбцу.
@@ -111,7 +111,7 @@ interface Servicable
     /**
      * Возвращает модель(-и) по ее(их) идентификатору(-ам).
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$id Идентификатор или коллекция идентификаторов.
+     * @param  \Illuminate\Contracts\Support\Arrayable|array|string|int  ...$id Идентификатор или коллекция идентификаторов.
      * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>|\Illuminate\Database\Eloquent\Model|null
      */
     public function find(mixed ...$id): Model|Collection|null;
@@ -119,7 +119,7 @@ interface Servicable
     /**
      * Возвращает множество моделей по их идентификаторам.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$ids Коллекция идентификаторов.
+     * @param  \Illuminate\Contracts\Support\Arrayable|array|string|int  ...$ids Коллекция идентификаторов.
      * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      */
     public function findMany(mixed ...$ids): Collection;
@@ -127,7 +127,7 @@ interface Servicable
     /**
      * Возвращает модель(-и) по ее(их) идентификатору(-ам) или выбрасывает исключение.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  $id Идентификатор или коллекция идентификаторов.
+     * @param  \Illuminate\Contracts\Support\Arrayable|array|string|int  $id Идентификатор или коллекция идентификаторов.
      * @param  bool  $all [true] Выбросить исключение в случае отсутствия хотябы одного из переданных идентификаторов?
      * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>|\Illuminate\Database\Eloquent\Model
      *
@@ -138,7 +138,7 @@ interface Servicable
     /**
      * Возвращает модели по их идентификаторам или выбрасывает исключение.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  $ids Коллекция идентификаторов.
+     * @param  \Illuminate\Contracts\Support\Arrayable|array|string|int  $ids Коллекция идентификаторов.
      * @param  bool  $all [true] Выбросить исключение в случае отсутствия хотябы одного из переданных идентификаторов?
      * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model>
      *
@@ -149,14 +149,14 @@ interface Servicable
     /**
      * Возвращает модель по ее идентификатору или создает новый пустой экземпляр модели.
      *
-     * @param  \Illuminate\Database\Eloquent\Model|string|int  $id Идентификатор.
+     * @param  string|int  $id Идентификатор.
      */
     public function findOrNew(mixed $id): Model;
 
     /**
      * Возвращает модель по ее идентификатору или возвращает результат выполнения переданной функции.
      *
-     * @param  \Illuminate\Database\Eloquent\Model|string|int  $id Идентификатор.
+     * @param  string|int  $id Идентификатор.
      * @return \Illuminate\Database\Eloquent\Model|mixed
      */
     public function findOr(mixed $id, Closure $callback): mixed;
@@ -164,8 +164,8 @@ interface Servicable
     /**
      * Возвращает первую запись, соответствующую атрибутам, или создает ее экземпляр.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $attributes Аттрибуты, по которым ведется поиск.
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $values Аттрибуты, которые необходимо добавить к аттрибутам,
+     * @param  \Illuminate\Contracts\Support\Arrayable|array  $attributes Аттрибуты, по которым ведется поиск.
+     * @param  \Illuminate\Contracts\Support\Arrayable|array  $values Аттрибуты, которые необходимо добавить к аттрибутам,
      * по которым ведется поиск, при создании нового экземпляра модели.
      */
     public function firstOrNew(mixed $attributes = [], mixed $values = []): Model;
@@ -173,8 +173,8 @@ interface Servicable
     /**
      * Возвращает первую запись, соответствующую атрибутам. Если запись не найдена, создает ее.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $attributes Аттрибуты, по которым ведется поиск.
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $values Аттрибуты, которые необходимо добавить к аттрибутам,
+     * @param  \Illuminate\Contracts\Support\Arrayable|array  $attributes Аттрибуты, по которым ведется поиск.
+     * @param  \Illuminate\Contracts\Support\Arrayable|array  $values Аттрибуты, которые необходимо добавить к аттрибутам,
      * по которым ведется поиск, при создании нового экземпляра модели.
      */
     public function firstOrCreate(mixed $attributes = [], mixed $values = []): Model;
@@ -182,8 +182,8 @@ interface Servicable
     /**
      * Пытается создать запись. Если происходит нарушение ограничения уникальности, попытается найти соответствующую запись.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $attributes Аттрибуты, по которым ведется поиск.
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $values Аттрибуты, которые необходимо добавить к аттрибутам,
+     * @param  \Illuminate\Contracts\Support\Arrayable|array  $attributes Аттрибуты, по которым ведется поиск.
+     * @param  \Illuminate\Contracts\Support\Arrayable|array  $values Аттрибуты, которые необходимо добавить к аттрибутам,
      * по которым ведется поиск, при создании нового экземпляра модели.
      */
     public function createOrFirst(mixed $attributes = [], mixed $values = []): Model;
@@ -191,8 +191,8 @@ interface Servicable
     /**
      * Создает или обновляет запись, соответствующую атрибутам, и заполняет ее значениями.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $attributes Аттрибуты, по которым ведется поиск.
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array  $values Аттрибуты, которые необходимо добавить к аттрибутам,
+     * @param  \Illuminate\Contracts\Support\Arrayable|array  $attributes Аттрибуты, по которым ведется поиск.
+     * @param  \Illuminate\Contracts\Support\Arrayable|array  $values Аттрибуты, которые необходимо добавить к аттрибутам,
      * по которым ведется поиск, при создании нового экземпляра модели. При существовании записи, эти аттрибуты будут переданы для обновления.
      */
     public function updateOrCreate(mixed $attributes = [], mixed $values = []): Model;
@@ -215,21 +215,21 @@ interface Servicable
     /**
      * Проверяет наличие хотябы одной модели в таблице по ее идентификатору или уникальному ключу.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$id Идентификатор(-ы) или уникальный(-е) ключ(-и).
+     * @param  \Illuminate\Contracts\Support\Arrayable|array|string|int  ...$id Идентификатор(-ы) или уникальный(-е) ключ(-и).
      */
     public function hasOne(mixed ...$id): bool;
 
     /**
      * Проверяет наличие всех моделей в таблице по их идентификаторам или уникальным столбцам.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  ...$id Идентификатор(-ы) или уникальный(-е) ключ(-и).
+     * @param  \Illuminate\Contracts\Support\Arrayable|array|string|int  ...$id Идентификатор(-ы) или уникальный(-е) ключ(-и).
      */
     public function hasAll(mixed ...$id): bool;
 
     /**
      * Проверяет наличие модели в таблице по ее идентификатору или уникальному столбцу.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|\Illuminate\Database\Eloquent\Model|array|string|int  $id Идентификатор(-ы) или уникальный(-е) ключ(-и).
+     * @param  \Illuminate\Contracts\Support\Arrayable|array|string|int  $id Идентификатор(-ы) или уникальный(-е) ключ(-и).
      * @param  bool  $all [false] Проверять наличие всех моделей из переданных идентификаторов?
      */
     public function has(mixed $id, bool $all = false): bool;
