@@ -4,9 +4,7 @@ namespace dmitryrogolev\Services;
 
 use ArrayAccess;
 use Closure;
-use dmitryrogolev\Contracts\Resourcable as ResourcableContract;
 use dmitryrogolev\Contracts\Servicable;
-use dmitryrogolev\Traits\Resourcable;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -20,10 +18,9 @@ use Illuminate\Support\Traits\Macroable;
 /**
  * Сервис работы с моделью.
  */
-abstract class Service implements ResourcableContract, Servicable
+abstract class Service implements Servicable
 {
     use Macroable;
-    use Resourcable;
 
     /**
      * Имя модели таблицы.
