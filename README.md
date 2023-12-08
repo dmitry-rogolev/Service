@@ -364,6 +364,18 @@
 - [createIfNotExists](#createifnotexists) - Создает модель только если ее не существует в таблице.
 - [createGroup](#creategroup) - Создает группу моделей.
 - [createGroupIfNotExists](#creategroupifnotexists) - Создает группу не существующих в таблице моделей.
+- [createOrFirst](#createorfirst) - Пытается создать запись. Если происходит нарушение ограничения уникальности, попытается найти соответствующую запись.
+- [factory](#factory) - Возвращает экземпляр фабрики модели.
+- [find](#find) - Возвращает модель(-и) по ее(их) идентификатору(-ам).
+- [findMany](#findmany) - Возвращает множество моделей по их идентификаторам.
+- [findManyOrFail](#findmanyorfail) - Возвращает коллекцию моделей по их идентификаторам или выбрасывает исключение.
+- [findOr](#findor) - Возвращает модель по ее идентификатору или возвращает результат выполнения переданной функции.
+- [findOrFail](#findorfail) - Возвращает модель(-и) по ее(их) идентификатору(-ам) или выбрасывает исключение.
+- [findOrNew](#findornew) - Возвращает модель по ее идентификатору или создает новый пустой экземпляр модели.
+- [firstOrCreate](#firstorcreate) - Возвращает первую запись, соответствующую атрибутам. Если запись не найдена, создает ее.
+- [firstOrNew](#firstornew) - Возвращает первую запись, соответствующую атрибутам, или создает ее экземпляр, не сохраняя в таблице.
+- [firstWhere](#firstwhere) - Возвращает первую модель из коллекции, удовлетворяющую условию.
+- [firstWhereUniqueKey](#firstwhereuniquekey) - Возвращает первую модель, имеющую переданный уникальный ключ.
 
 ### Подробное описание
 
@@ -371,28 +383,28 @@
 
 Возвращает имя модели сервиса.
 
-    $modelClass = Service::getModel(); 
+    $modelClass = Service::getModel(); // string
     $model = new $model;
 
 #### `getSeeder` 
 
 Возвращает имя сидера модели.
 
-    $seederClass = Service::getSeeder();
+    $seederClass = Service::getSeeder(); // string
     $seeder = new $seederClass;
 
 #### `getFactory`
 
 Возвращает имя фабрики модели.
 
-    $factoryClass = Service::getFactory();
+    $factoryClass = Service::getFactory(); // string
     $factory = new $factoryClass;
 
 #### `uniqueKeys`
 
 Возвращает столбцы таблицы, содержащие уникальные данные в виде массива.
 
-    $uniqueKeys = Service::uniqueKeys();
+    $uniqueKeys = Service::uniqueKeys(); // array
 
 Некоторые методы сервиса используют эти ключи для поиска записей. Например, метод `find` ищет записи по их идентификаторам (первичным ключам), а метод `whereUniqueKey` ищет не только по первичному ключу, но и по столбцам, хранящие уникальные значения. Такими столбцами могут выступать: 'email', 'phone', 'token' и др. 
 
@@ -442,9 +454,9 @@
 
 #### `all`
 
-Возвращает все модели из таблицы в виде коллекции `Illuminate\Database\Eloquent\Collection`.
+Возвращает все модели из таблицы в виде коллекции.
 
-    $models = Service::all();
+    $models = Service::all(); // Illuminate\Database\Eloquent\Collection
 
 #### `create`
 
@@ -455,7 +467,7 @@
         'email' => 'admin@example.com',
         'password' => 'password',
     ];
-    $model = Service::create($attributes);
+    $model = Service::create($attributes); // Illuminate\Database\Eloquent\Model
 
 #### `createIfNotExists`
 
@@ -466,27 +478,195 @@
         'email' => 'admin@example.com',
         'password' => 'password',
     ];
-    $model = Service::createIfNotExists($attributes);
+    $model = Service::createIfNotExists($attributes); // Illuminate\Database\Eloquent\Model
 
 #### `createGroup`
 
-Создает группу моделей и возвращает ее в виде коллекции `Illuminate\Database\Eloquent\Collection`.
+Создает группу моделей и возвращает ее в виде коллекции.
 
     $group = [
         ['name' => fake()->name(), 'email' => fake()->unique()->email(), 'password' => 'password'],
         ['name' => fake()->name(), 'email' => fake()->unique()->email(), 'password' => 'password'],
         ['name' => fake()->name(), 'email' => fake()->unique()->email(), 'password' => 'password'],
     ];
-    $models = Service::createGroup($group);
+    $models = Service::createGroup($group); // Illuminate\Database\Eloquent\Collection
 
 #### `createGroupIfNotExists` 
 
-Создает группу не существующих в таблице моделей и возвращает ее в виде коллекции `Illuminate\Database\Eloquent\Collection`. Поиск записей осуществляется с помощью метода `where`. Если все записи существуют, вернется пустая коллекция.
+Создает группу не существующих в таблице моделей и возвращает ее в виде коллекции. Поиск записей осуществляется с помощью метода `where`. Если все записи существуют, вернется пустая коллекция.
 
     $group = [
         ['name' => fake()->name(), 'email' => fake()->unique()->email(), 'password' => 'password'],
         ['name' => fake()->name(), 'email' => fake()->unique()->email(), 'password' => 'password'],
         ['name' => fake()->name(), 'email' => fake()->unique()->email(), 'password' => 'password'],
     ];
-    $models = Service::createGroupIfNotExists($group);
+    $models = Service::createGroupIfNotExists($group); // Illuminate\Database\Eloquent\Collection
+
+#### `createOrFirst`
+
+Пытается создать запись. Если происходит нарушение ограничения уникальности, попытается найти соответствующую запись.
+
+Первым параметром передаются аттрибуты, по которым будет вестись поиск записи, в случае ее существования. Вторым параметром передаются аттрибуты, которые нужно добавить к первым аттрибутам при попытке создания модели.
+
+    $attributes = [
+        'email' => 'admin@example.com',
+    ];
+    $values = [
+        'name' => 'Admin',
+        'password' => 'password',
+    ];
+    $model = Service::createOrFirst($attributes, $values); // Illuminate\Database\Eloquent\Model
+
+#### `factory`
+
+Возвращает экземпляр фабрики модели.
+
+    $factory = Service::factory(); // Illuminate\Database\Eloquent\Factories\Factory
+
+    $model = $factory->create();
+
+#### `find`
+
+Возвращает модель(-и) по ее(их) идентификатору(-ам).
+
+При передачи одного идентификатора вернется одна модель.
+
+    $model = Service::find(1); // Illuminate\Database\Eloquent\Model
+
+При передачи массива идентификаторов вернется коллекция моделей.
+
+    $models = Service::find([1, 2, 3]); // Illuminate\Database\Eloquent\Collection
+
+#### `findMany`
+
+Возвращает множество моделей по их идентификаторам.
+
+    $models = Service::findMany([1, 2, 3]); // Illuminate\Database\Eloquent\Collection
+
+#### `findManyOrFail` 
+
+Возвращает коллекцию моделей по их идентификаторам или выбрасывает исключение. По умолчанию в случае отсутствия хотя бы одной записи из переданных идентификаторов, будет выброшено исключение.
+
+    $models = Service::findManyOrFail([1, 2, 3]); // Illuminate\Database\Eloquent\Collection
+
+Если передать `false` вторым параметром, исключение будет выброшено только тогда, когда не найдена ни одна запись из переданных идентификаторов.
+
+    $models = Service::findManyOrFail([1, 2, 3], false); // Illuminate\Database\Eloquent\Collection
+
+#### `findOr`
+
+Возвращает модель по ее идентификатору или возвращает результат выполнения переданной функции.
+
+    $model = Service::findOr($id, function () {
+        abort(404);
+    }); // Illuminate\Database\Eloquent\Model
+
+#### `findOrFail`
+
+Возвращает модель(-и) по ее(их) идентификатору(-ам) или выбрасывает исключение. По умолчанию в случае отсутствия хотя бы одной записи из переданных идентификаторов, будет выброшено исключение.
+
+Если передать один идентификатор, вернется одна модель.
+
+    $model = Service::findOrFail(1); // Illuminate\Database\Eloquent\Model
+
+Если передать множество идентификаторов, вернется коллекция моделей.
+
+    $models = Service::findOrFail([1, 2, 3]); // Illuminate\Database\Eloquent\Collection
+
+Если передать `false` вторым параметром, исключение будет выброшено только тогда, когда не найдена ни одна запись из переданных идентификаторов.
+
+    $models = Service::findOrFail([1, 2, 3], false); // Illuminate\Database\Eloquent\Collection
+
+#### `findOrNew` 
+
+Возвращает модель по ее идентификатору или создает новый пустой экземпляр модели.
+
+    $model = Service::findOrNew(1); // Illuminate\Database\Eloquent\Model
+
+#### `firstOrCreate`
+
+Возвращает первую запись, соответствующую атрибутам. Если запись не найдена, создает ее.
+
+Первым параметром передаются аттрибуты, по которым будет вестись поиск записи. Вторым параметром передаются аттрибуты, которые нужно добавить к первым аттрибутам при создании модели.
+
+    $attributes = [
+        'email' => fake()->unique()->email(),
+    ];
+    $values = [
+        'name' => $user->name,
+        'password' => $user->password,
+    ];
+    $model = Service::firstOrCreate($attributes, $values); // Illuminate\Database\Eloquent\Model
+
+#### `firstOrNew`
+
+Возвращает первую запись, соответствующую атрибутам, или создает ее экземпляр, не сохраняя ее в таблице.
+
+Первым параметром передаются аттрибуты, по которым будет вестись поиск записи. Вторым параметром передаются аттрибуты, которые нужно добавить к первым аттрибутам при создании модели.
+
+    $attributes = [
+        'email' => fake()->unique()->email(),
+    ];
+    $values = [
+        'name' => $user->name,
+        'password' => $user->password,
+    ];
+    $model = Service::firstOrNew($attributes, $values); // Illuminate\Database\Eloquent\Model
+
+#### `firstWhere`
+
+Возвращает первую модель из коллекции, удовлетворяющую условию. Если запись не найдена, возвращается `null`.
+
+Первым параметром принимается столбец, по которому необходимо вести поиск. Вторым - оператор сравнения. Третьим - искомое значение столбца.
+
+    $model = Service::firstWhere('email', '=', 'admin@example.com'); // Illuminate\Database\Eloquent\Model
+
+Оператор '`=`' можно опустить, он будет назначен по умолчанию.
+
+    $model = Service::firstWhere('email', 'admin@example.com'); // Illuminate\Database\Eloquent\Model
+
+Также вместо столбца можно передать массив двух видов: 
+
+1. Массив вида ключ-значение, где ключ - это столбец, а значение - значение этого столбца.
+
+        $column = ['email' => 'admin@example.com'];
+        $model = Service::firstWhere($column); // Illuminate\Database\Eloquent\Model
+
+2. Массив, состоящий из массивов, содержащих столбец, оператор и значение.
+
+        $column = [
+            ['email', '=', 'admin@example.com'], 
+        ];
+        $model = Service::firstWhere($column); // Illuminate\Database\Eloquent\Model
+
+#### `firstWhereUniqueKey`
+
+Возвращает первую модель, имеющую переданный первичный ключ или уникальный ключ. Если запись не найдена, возвращает `null`.
+
+Данный метод использует для поиска записей уникальные ключи. Смотрите [uniqueKeys](#uniquekeys).
+
+Передаем идентификатор.
+
+    $model = Service::firstWhereUniqueKey(1); // Illuminate\Database\Eloquent\Model
+
+Передаем уникальный ключ.
+
+    $model = Service::firstWhereUniqueKey('admin@example.com'); //Illuminate\Database\Eloquent\Model
+
+Передаем множество идентификаторов.
+
+    $model = Service::firstWhereUniqueKey([1, 2, 3]); // Illuminate\Database\Eloquent\Model
+
+Передаем множество уникальных ключей.
+
+    $keys = [
+        'admin@example.com', 
+        'user@example.com', 
+    ];
+    $model = Service::firstWhereUniqueKey($keys); // Illuminate\Database\Eloquent\Model
+
+Передаем отсутствующий идентификатор.
+
+    $model = Service::firstWhereUniqueKey(345345); // null
+
 

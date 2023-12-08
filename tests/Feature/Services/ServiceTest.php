@@ -1595,7 +1595,7 @@ class ServiceTest extends TestCase
     /**
      * Есть ли метод, возвращающий модель по ее идентификатору или возвращающий новый экземпляр пустой модели?
      */
-    public function test_find_return_model_or_new(): void
+    public function test_find_or_new(): void
     {
         $user = $this->generate(User::class);
 
@@ -1642,7 +1642,7 @@ class ServiceTest extends TestCase
     /**
      * Есть ли метод, возвращающий модель по ее идентификатору или возвращающий результат выполнения переданной функции?
      */
-    public function test_find_return_model_or(): void
+    public function test_find_or(): void
     {
         $user = $this->generate(User::class);
         $callback = fn () => false;
