@@ -376,6 +376,25 @@
 - [firstOrNew](#firstornew) - Возвращает первую запись, соответствующую атрибутам, или создает ее экземпляр, не сохраняя в таблице.
 - [firstWhere](#firstwhere) - Возвращает первую модель из коллекции, удовлетворяющую условию.
 - [firstWhereUniqueKey](#firstwhereuniquekey) - Возвращает первую модель, имеющую переданный уникальный ключ.
+- [generate](#generate) - Генерирует модели с помощью фабрики.
+- [has](#has) - Проверяет наличие модели в таблице по ее идентификатору или уникальному столбцу.
+- [hasAll](#hasall) - Проверяет наличие всех моделей в таблице по их идентификаторам или уникальным столбцам.
+- [hasOne](#hasone) - Проверяет наличие хотябы одной модели в таблице по ее идентификатору или уникальному ключу.
+- [hasWhere](#haswhere) - Проверяет наличие записи в таблице по переданному условию.
+- [latest](#latest) - Возвращает самую позднюю по времени создания модель.
+- [make](#make) - Создает экземпляр модели, но не сохраняет ее в таблицу.
+- [makeGroup](#makegroup) - Создает группу экземпляров моделей.
+- [makeGroupIfNotExists](#makegroupifnotexists) - Создать группу не существующих в таблице экземпляров моделей.
+- [makeIfNotExists](#makeifnotexists) - Создает экземпляр модели, только если она не существует в таблице.
+- [oldest](#oldest) - Возвращает самую раннюю по времени создания модель.
+- [query](#query) - Возвращает построитель SQL запросов.
+- [random](#random) - Возвращает случайную модель из таблицы.
+- [seed](#seed) - Запускает сидер модели.
+- [truncate](#truncate) - Очищает таблицу.
+- [updateOrCreate](#updateorcreate) - Создает или обновляет запись, соответствующую атрибутам, и заполняет ее значениями.
+- [where](#where) - Возвращает коллекцию моделей по столбцу.
+- [whereKey](#wherekey) - Возвращает коллекцию моделей по их идентификаторам.
+- [whereKeyNot](#wherekeynot) - Возвращает коллекцию всех моделей, за исключением тех, которые имеют переданные идентификаторы.
 
 ### Подробное описание
 
@@ -615,29 +634,14 @@
 
 #### `firstWhere`
 
-Возвращает первую модель из коллекции, удовлетворяющую условию. Если запись не найдена, возвращается `null`.
+Возвращает первую модель из коллекции, удовлетворяющую условию. Если запись не найдена, возвращает `null`.
 
-Первым параметром принимается столбец, по которому необходимо вести поиск. Вторым - оператор сравнения. Третьим - искомое значение столбца.
+Метод принимает те же параметры, что и метод [where](#where).
 
-    $model = Service::firstWhere('email', '=', 'admin@example.com'); // Illuminate\Database\Eloquent\Model
-
-Оператор '`=`' можно опустить, он будет назначен по умолчанию.
-
-    $model = Service::firstWhere('email', 'admin@example.com'); // Illuminate\Database\Eloquent\Model
-
-Также вместо столбца можно передать массив двух видов: 
-
-1. Массив вида ключ-значение, где ключ - это столбец, а значение - значение этого столбца.
-
-        $column = ['email' => 'admin@example.com'];
-        $model = Service::firstWhere($column); // Illuminate\Database\Eloquent\Model
-
-2. Массив, состоящий из массивов, содержащих столбец, оператор и значение.
-
-        $column = [
-            ['email', '=', 'admin@example.com'], 
-        ];
-        $model = Service::firstWhere($column); // Illuminate\Database\Eloquent\Model
+    $column = 'email';
+    $operator = '=';
+    $value = 'user@example.com';
+    Service::firstWhere($column, $operator, $value); // Illuminate\Database\Eloquent\Model
 
 #### `firstWhereUniqueKey`
 
@@ -668,5 +672,255 @@
 Передаем отсутствующий идентификатор.
 
     $model = Service::firstWhereUniqueKey(345345); // null
+
+#### `generate`
+
+Генерирует модели с помощью фабрики.
+
+    $model = Service::generate(); // Illuminate\Database\Eloquent\Model
+
+Первым параметром метод принимает аттрибуты для создания моделей, а вторым количество создаваемых моделей. При этом возвращается коллекция созданных моделей.
+
+    $attributes = [
+        'name' => fake()->name(),
+    ];
+    $count = 3;
+    $models = Service::generate($attributes, $count); // Illuminate\Database\Eloquent\Collection
+
+Количество моделей можно опустить, тогда вернется одна модель.
+
+    attributes = [
+        'name' => fake()->name(),
+    ];
+    $model = Service::generate($attributes); // Illuminate\Database\Eloquent\Model
+
+Если нужно передать только количество создаваемых моделей без указания аттрибутов, можно передать их первым параметром.
+
+    $count = 3;
+    $models = Service::generate($count); // Illuminate\Database\Eloquent\Collection
+
+По умолчанию, метод создает экземпляр модели и сохраняет его в таблице. Если вам нужно просто создать экземпляр, передайте методу `false`.
+
+    $create = false;
+
+    // Первый способ
+    $model = Service::generate($create);
+
+    // Второй способ
+    $model = Service::generate($attributes_or_count, $create);
+
+    // Третий способ
+    $model = Service::generate($attributes, $count, $create);
+
+#### `has`
+
+Проверяет наличие модели в таблице по ее идентификатору или уникальному столбцу.
+
+Данный метод использует для поиска записей уникальные ключи. Смотрите [uniqueKeys](#uniquekeys).
+
+По умолчанию метод возвращает `false` только тогда, когда не найдена ни одна запись из переданных идентификаторов или уникальных ключей. 
+
+    Service::has('admin@example.com'); // bool
+
+    Service::has([1, 2, 3]); // bool
+
+Если вторым параметром передать `true`, метод вернет `false` даже в том случае, если хотя бы один идентификатор или уникальный ключ не найден.
+
+    Service::has([1, 2, 3], true); // bool
+
+#### `hasAll`
+
+Проверяет наличие всех моделей в таблице по их идентификаторам или уникальным столбцам.
+
+Данный метод использует для поиска записей уникальные ключи. Смотрите [uniqueKeys](#uniquekeys).
+
+Вернет `false` даже в том случае, если хотя бы один идентификатор или уникальный ключ не найден.
+
+    Service::hasAll([
+        'admin@example.com', 
+        'user@example.com', 
+        'moderator@example.com', 
+    ]); // bool
+
+    Service::hasAll([1, 2, 3]); // bool
+
+#### `hasOne`
+
+Проверяет наличие хотябы одной модели в таблице по ее идентификатору или уникальному ключу.
+
+Данный метод использует для поиска записей уникальные ключи. Смотрите [uniqueKeys](#uniquekeys).
+
+Возвращает `false` только тогда, когда не найдена ни одна запись из переданных идентификаторов или уникальных ключей. 
+
+    Service::hasOne('admin@example.com'); // bool
+
+    Service::hasOne([1, 2, 3]); // bool
+
+#### `hasWhere`
+
+Проверяет наличие записи в таблице по переданному условию.
+
+Метод принимает те же параметры, что и метод [where](#where).
+
+Возвращает `true`, если хотябы одна запись найдена.
+
+    $column = 'email';
+    $operator = '=';
+    $value = 'user@example.com';
+    Service::hasWhere($column, $operator, $value); // bool
+
+#### `latest`
+
+Возвращает самую позднюю по времени создания модель. Если таблица пустая, вернется `null`.
+
+    $model = Service::latest(); // Illuminate\Database\Eloquent\Model
+
+#### `make`
+
+Создает экземпляр модели, но не сохраняет ее в таблицу.
+
+Первым параметром принимает аттрибуты, с которыми нужно создать экземпляр модели.
+
+    $attributes = [
+        'name' => 'Admin',
+        'email' => 'admin@admin.com',
+        'password' => 'password',
+    ];
+    $model = Service::make($attributes); // Illuminate\Database\Eloquent\Model
+
+#### `makeGroup`
+
+Создает группу экземпляров моделей, но не сохраняет их в таблицу.
+
+    $group = [
+        ['name' => fake()->name(), 'email' => fake()->unique()->email(), 'password' => 'password'],
+        ['name' => fake()->name(), 'email' => fake()->unique()->email(), 'password' => 'password'],
+        ['name' => fake()->name(), 'email' => fake()->unique()->email(), 'password' => 'password'],
+    ];
+    $models = Service::makeGroup($group); // Illuminate\Database\Eloquent\Collection
+
+#### `makeGroupIfNotExists`
+
+Создать группу не существующих в таблице экземпляров моделей.
+
+    $group = [
+        ['name' => fake()->name(), 'email' => fake()->unique()->email(), 'password' => 'password'],
+        ['name' => fake()->name(), 'email' => fake()->unique()->email(), 'password' => 'password'],
+        ['name' => fake()->name(), 'email' => fake()->unique()->email(), 'password' => 'password'],
+    ];
+    $models = Service::makeGroup($group); // Illuminate\Database\Eloquent\Collection
+
+#### `makeIfNotExists`
+
+Создает экземпляр модели, только если она не существует в таблице. Если модель существует, возвращает `null`.
+    
+    $attributes = [
+        'name' => 'Admin',
+        'email' => 'admin@admin.com',
+        'password' => 'password',
+    ];
+    $model = Service::makeIfNotExists($attributes); // Illuminate\Database\Eloquent\Model
+
+#### `oldest`
+
+Возвращает самую раннюю по времени создания модель. Если таблица пустая, вернется `null`.
+
+    $model = Service::oldest(); // Illuminate\Database\Eloquent\Model
+
+#### `query`
+
+Возвращает построитель SQL запросов.
+
+    $builder = Service::query(); // Illuminate\Database\Eloquent\Builder
+
+#### `random`
+
+Возвращает случайную модель из таблицы.
+
+    $model = Service::random(); // Illuminate\Database\Eloquent\Model
+
+#### `seed`
+
+Запускает сидер модели.
+
+Перед использованием, вы должны убедиться, что вы передали сервису имя класса сидера модели. Смотрите [Указание сидера](#указание-сидера-не-обязательно).
+
+    Service::seed();
+
+#### `truncate`
+
+Очищает таблицу.
+
+    Service::truncate();
+
+#### `updateOrCreate`
+
+Создает или обновляет запись, соответствующую атрибутам, и заполняет ее значениями.
+
+Первым параметром метод принимает аттрибуты, по которым необходимо вести поиск. Вторым параметром передаются аттрибуты, которые необходимо добавить к первым при создании модели.
+
+Если запись найдена, она будет изменена аттрибутами из второго параметра.
+
+    $attributes = [
+        'email' => fake()->unique()->email(),
+    ];
+    $values = [
+        'name' => 'Admin',
+        'password' => 'password',
+    ];
+    $model = Service::updateOrCreate($attributes, $values); // Illuminate\Database\Eloquent\Model
+
+#### `where`
+
+Возвращает коллекцию моделей по столбцу.
+
+Первым параметром принимается столбец, по которому необходимо вести поиск. Вторым - оператор сравнения. Третьим - искомое значение столбца.
+
+    $model = Service::where('email', '=', 'admin@example.com'); // Illuminate\Database\Eloquent\Collection
+
+Оператор '`=`' можно опустить, он будет назначен по умолчанию.
+
+    $model = Service::where('email', 'admin@example.com'); // Illuminate\Database\Eloquent\Collection
+
+Также вместо столбца можно передать массив двух видов: 
+
+1. Массив вида ключ-значение, где ключ - это столбец, а значение - значение этого столбца.
+
+        $column = ['email' => 'admin@example.com'];
+        $model = Service::where($column); // Illuminate\Database\Eloquent\Collection
+
+2. Массив, состоящий из массивов, содержащих столбец, оператор и значение.
+
+        $column = [
+            ['email', '=', 'admin@example.com'], 
+        ];
+        $model = Service::where($column); // Illuminate\Database\Eloquent\Collection
+
+#### `whereKey`
+
+Возвращает коллекцию моделей по их идентификаторам.
+
+    $models = Service::whereKey(1); // Illuminate\Database\Eloquent\Collection
+    
+    $models = Service::whereKey([1, 2, 3]); // Illuminate\Database\Eloquent\Collection
+
+#### `whereKeyNot` 
+
+Возвращает коллекцию всех моделей, за исключением тех, которые имеют переданные идентификаторы.
+
+    $models = Service::whereKeyNot(1); // Illuminate\Database\Eloquent\Collection
+    
+    $models = Service::whereKeyNot([1, 2, 3]); // Illuminate\Database\Eloquent\Collection
+
+#### `whereNot`
+
+Возвращает коллекцию, которая не удовлетворяет условию.
+
+Метод принимает те же параметры, что и метод [where](#where).
+
+    $column = 'email';
+    $operator = '=';
+    $value = 'user@example.com';
+    Service::whereNot($column, $operator, $value); // Illuminate\Database\Eloquent\Collection
 
 
