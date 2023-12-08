@@ -12,8 +12,9 @@
     - [Создание класса](#создание-класса)
     - [Вынесение логики из контроллера](#вынесение-логики-из-контроллера)
     - [Ресурсный сервис](#ресурсный-сервис)
+    - [Создание фасада](#создание-фасада)
 
-3. [Использование](#использование)
+3. [Доступные методы](#доступные-методы)
 
 ## Подключение 
 
@@ -22,7 +23,7 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "git@github.com:dmitry-rogolev/Helper.git"
+            "url": "git@github.com:dmitry-rogolev/Service.git"
         }
     ]
 
@@ -181,13 +182,22 @@
 
     class UserController extends Controller 
     {
+        protected UserService $service;
+
+        public function __construct()
+        {
+            parent::__construct();
+
+            $this->service = new UserService();
+        }
+
         public function update(UpdateRequest $request, User $user): UserResource
         {
             // Проверяем на валидность данные от клиента.
             $validated = $request->validated();
 
             // Обновляем модель пользователя.
-            UserService::update($user, $validated);
+            $this->service->update($user, $validated);
 
             // Возвращаем обновленную модель пользователя.
             return new UserResource($user);
@@ -212,5 +222,64 @@
 
 Если у вас простая логика по работе с моделью, то вы можете подключить трейт `dmitryrogolev\Traits\Resourcable`, в котором определены выше перечисленные методы.
 
-## Использование 
+### Создание фасада
+
+Как было показано выше в примере, перед тем как пользоваться сервисом, нам необходимо было создать экземпляр этого сервиса в конструкторе, записать ссылку на него в поле класса и только потом мы смогли воспользоваться им. Это не очень удобно. Хотелось бы воспользоваться сервисом не создавая самостоятельно его экземпляра и вызывать его методы статически. Для этого есть решение - фасад.
+
+Давайте создадим класс фасада, который мы назовем `UserService` и поместим в папку `app\Facades`. Он должен расширять класс `Illuminate\Support\Facades\Facade`.
+
+    <?php
+
+    namespace App\Facades;
+
+    use Illuminate\Support\Facades\Facade;
+
+    class UserService extends Facade
+    {
+        
+    }
+
+Теперь необходимо добавить метод `getFacadeAccessor`, который должен возвращать имя класса нашего сервиса.
+
+    <?php
+
+    namespace App\Facades;
+
+    use Illuminate\Support\Facades\Facade;
+
+    class Service extends Facade
+    {
+        protected static function getFacadeAccessor()
+        {
+            return \App\Services\UserService::class;
+        }
+    }
+
+На этом создание фасада закончено. Теперь, используя фасад, мы будем вызывать методы сервиса статически. Если вернуться к примеру выше, то наш контроллер теперь будет выглядеть так: 
+
+    <?php 
+
+    namespace App\Http\Controllers;
+
+    use App\Models\User;
+    use App\Http\Requests\User\UpdateRequest;
+    use App\Http\Resources\UserResource;
+    use App\Facades\UserService;
+
+    class UserController extends Controller 
+    {
+        public function update(UpdateRequest $request, User $user): UserResource
+        {
+            // Проверяем на валидность данные от клиента.
+            $validated = $request->validated();
+
+            // Обновляем модель пользователя.
+            UserService::update($user, $validated);
+
+            // Возвращаем обновленную модель пользователя.
+            return new UserResource($user);
+        }
+    }
+
+## Доступные методы
 
