@@ -24,6 +24,8 @@
     - [Список](#список)
     - [Подробное описание](#подробное-описание)
 
+4. [Лицензия](#лицензия)
+
 ## Подключение 
 
 Добавьте ссылку на репозиторий в файл `composer.json`.
@@ -396,6 +398,7 @@
 - [whereKey](#wherekey) - Возвращает коллекцию моделей по их идентификаторам.
 - [whereKeyNot](#wherekeynot) - Возвращает коллекцию всех моделей, за исключением тех, которые имеют переданные идентификаторы.
 - [whereNot](#wherenot) - Возвращает коллекцию, которая не удовлетворяет условию.
+- [whereUniqueKey](#whereuniquekey) - Возвращает коллекцию моделей по ее уникальному ключу.
 
 ### Подробное описание
 
@@ -924,4 +927,50 @@
     $value = 'user@example.com';
     Service::whereNot($column, $operator, $value); // Illuminate\Database\Eloquent\Collection
 
+#### `whereUniqueKey`
 
+Возвращает коллекцию моделей по ее уникальному ключу.
+
+Данный метод использует для поиска записей уникальные ключи. Смотрите [uniqueKeys](#uniquekeys).
+
+Передаем первичный ключ или множество первичных ключей.
+
+    $models = Service::whereUniqueKey(1); // Illuminate\Database\Eloquent\Collection
+
+    $models = Service::whereUniqueKey([1, 2, 3]); // Illuminate\Database\Eloquent\Collection
+
+Передаем уникальный ключ или множество уникальных ключей.
+
+    $models = Service::whereUniqueKey('user@example.com'); // Illuminate\Database\Eloquent\Collection
+
+    $models = Service::whereUniqueKey([
+        'admin@example.com', 
+        'user@example.com', 
+        'moderator@example.com', 
+    ]); // Illuminate\Database\Eloquent\Collection
+
+#### `whereUniqueKeyNot`
+
+Возвращает все записи, за исключением тех, которые содержат переданные уникальные ключи.
+
+Данный метод использует для поиска записей уникальные ключи. Смотрите [uniqueKeys](#uniquekeys).
+
+Передаем первичный ключ или множество первичных ключей.
+
+    $models = Service::whereUniqueKeyNot(1); // Illuminate\Database\Eloquent\Collection
+
+    $models = Service::whereUniqueKeyNot([1, 2, 3]); // Illuminate\Database\Eloquent\Collection
+
+Передаем уникальный ключ или множество уникальных ключей.
+
+    $models = Service::whereUniqueKeyNot('user@example.com'); // Illuminate\Database\Eloquent\Collection
+
+    $models = Service::whereUniqueKeyNot([
+        'admin@example.com', 
+        'user@example.com', 
+        'moderator@example.com', 
+    ]); // Illuminate\Database\Eloquent\Collection
+
+## Лицензия
+
+Этот пакет является бесплатным программным обеспечением, распространяемым на условиях лицензии [MIT](./LICENSE).
